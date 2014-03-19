@@ -83,7 +83,7 @@ public class javaapplication1 {
                 ClassHUT classHUTb = new ClassHUT();
                 classHUTb.className="Teste b";
                 classHUTb.classId="40685";
-                classHUTb.classDateTime=df.parse("2014-03-20 03:01");
+                classHUTb.classDateTime=df.parse("2014-03-20 03:16");
                 
                 classHUTList.add(classHUTa);
                 classHUTList.add(classHUTb);
@@ -258,7 +258,13 @@ public class javaapplication1 {
                 System.out.println(response.toString());
                 */
                 //print result
-		System.out.println(response.toString());
+        	System.out.println(response.toString());
+                Document doc = Jsoup.parse(response.toString());
+                Elements links = doc.getElementsByTag("li");
+                for (Element link : links) {
+                    String linkHref = link.attr("href");
+                    String linkText = link.text();
+                }
                 return true;
         }
         

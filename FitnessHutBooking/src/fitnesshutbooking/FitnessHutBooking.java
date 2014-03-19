@@ -11,6 +11,6 @@ package fitnesshutbooking;
  * @author Rui Trigo
  */
 public class FitnessHutBooking {
-
+    
     
 }

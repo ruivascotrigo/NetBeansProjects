@@ -26,6 +26,12 @@ import java.util.Iterator;
 import java.util.List;
 import javax.swing.JOptionPane;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+
 class ClassHUT
 {
     public String className;
@@ -41,9 +47,11 @@ public class javaapplication1 {
         private static final String password = "a%23yQeZyMu";
         private final String loginURL = "http://m.fitnesshut.pt/includes/login.php"; //POST
         private final String bookClassURL = "http://m.fitnesshut.pt/includes/login.php"; //POST
-        private final String getClassURL = "http://m.fitnesshut.pt/pages/aula.php?id="; //GET
+        private final String getClassAvailabilityURL = "http://m.fitnesshut.pt/pages/aula.php?id="; //GET
+        private final String getClassesURL = "http://m.fitnesshut.pt/pages/aulas.php?id="; //GET
+        
         //GET http://m.fitnesshut.pt/pages/get-aulas.php?id=5&date=2014-03-20 HTTP/1.1
-	// Buscar aulas de Odivelas do proprio dia http://m.fitnesshut.pt/pages/aulas.php?id=5
+	// Buscar aulas de Odivelas do proprio dia http://m.fitnesshut.pt/pages/aulas.php?id=5 //GET
         // Buscar aulas de Odivelas do dia especificado http://m.fitnesshut.pt/pages/get-aulas.php?id=5&date=2014-03-20
         
         private String phpCookie = "";
@@ -66,15 +74,16 @@ public class javaapplication1 {
                 
                 DateFormat df = new SimpleDateFormat("yyyy-MM-dd hh:mm");
                 
+                
                 ClassHUT classHUTa = new ClassHUT();
                 classHUTa.className="Teste a";
                 classHUTa.classId="40684";
-                classHUTa.classDateTime=df.parse("2014-03-18 21:00");
+                classHUTa.classDateTime=df.parse("2014-03-19 21:50");
                              
                 ClassHUT classHUTb = new ClassHUT();
                 classHUTb.className="Teste b";
                 classHUTb.classId="40685";
-                classHUTb.classDateTime=df.parse("2014-03-19 02:44");
+                classHUTb.classDateTime=df.parse("2014-03-20 03:01");
                 
                 classHUTList.add(classHUTa);
                 classHUTList.add(classHUTb);
@@ -93,22 +102,27 @@ public class javaapplication1 {
                 }
                 
                 if ( secsToWait == maxWaitTime){
+                    System.out.println("No classes to book");
                     return; //no classes to book
                 }
                 
+                System.out.println(secsToWait - beforeWaitTime);
+
                 if ( secsToWait > beforeWaitTime){
                     try {
-                        System.out.println(secsToWait - beforeWaitTime);
-                        Thread.sleep(secsToWait - beforeWaitTime);
+                        Thread.sleep( (secsToWait - beforeWaitTime) * 1000);
                     } catch(InterruptedException ex) {
                         Thread.currentThread().interrupt();
                     }
                 }
                 
+                System.out.println("Trying to login");
                 if ( http.loginHUT(username, password) == false){
                     JOptionPane.showMessageDialog(null, "Login Falhou");
                     return;
                 }
+                
+                http.getClassesHUT("5", new Date());
                 
                 boolean classAvailableForBooking = false;
     
@@ -120,7 +134,7 @@ public class javaapplication1 {
                     } catch(InterruptedException ex) {
                         Thread.currentThread().interrupt();
                     }
-                    classAvailableForBooking = http.getClassHUT(classHUTa.classId);
+                    classAvailableForBooking = http.getClassAvailabilityHUT(classHUTa.classId);
                 
                 }
                 while (classAvailableForBooking == false);
@@ -150,11 +164,104 @@ public class javaapplication1 {
         
         }
         
-        public boolean getClassHUT(String classId) throws Exception{
+        public boolean getClassAvailabilityHUT(String classId) throws Exception{
             if ("".equals(phpCookie)) return false;
-            return this.sendGet(getClassURL + classId);
-        
+            //return this.sendGet(getClassURL + classId);
+            String url = getClassAvailabilityURL + classId;
+            
+            URL obj = new URL(url);
+            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+ 
+		// optional default is GET
+		con.setRequestMethod("GET");
+ 
+		//add request header
+		con.setRequestProperty("User-Agent", USER_AGENT);
+                con.setRequestProperty("Cookie", phpCookie);
+ 
+		int responseCode = con.getResponseCode();
+		System.out.println("\nSending 'GET' request to URL : " + url);
+		System.out.println("Response Code : " + responseCode);
+ 
+		BufferedReader in = new BufferedReader( new InputStreamReader(con.getInputStream()) );
+		String inputLine;
+		StringBuffer response = new StringBuffer();
+ 
+		while ((inputLine = in.readLine()) != null) {
+			response.append(inputLine);
+		}
+		in.close();
+ 
+                //Aula pode estar em 3 estados
+                // Disponivel - mas ainda nao é possivel reservar
+                // Disponivel - possivel reservar
+                // Indisponivel e/ou esgotada
+                
+                String data = response.toString();
+                boolean isClassSoldOut = data.contains("Esgotado");
+                boolean isClassAvailable = data.contains("Disponível");
+                boolean isClassBookable = data.contains("bookAula");
+                
+                System.out.println(isClassSoldOut);
+                System.out.println(isClassAvailable);
+                System.out.println(isClassBookable);
+                System.out.println(response.toString());
+                
+                return (isClassAvailable & isClassBookable);
+		//print result
+		//System.out.println(response.toString());
         }
+        
+        public boolean getClassesHUT(String fitnessHutLocationId, Date day) throws Exception{
+            if ("".equals(phpCookie)) return false;
+            //return this.sendGet(getClassURL + classId);
+            //&date=2014-03-20
+            DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+            String url = getClassesURL + fitnessHutLocationId + "&date=" + df.format(day);
+            
+            URL obj = new URL(url);
+            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+ 
+		// optional default is GET
+		con.setRequestMethod("GET");
+ 
+		//add request header
+		con.setRequestProperty("User-Agent", USER_AGENT);
+                con.setRequestProperty("Cookie", phpCookie);
+ 
+		int responseCode = con.getResponseCode();
+		System.out.println("\nSending 'GET' request to URL : " + url);
+		System.out.println("Response Code : " + responseCode);
+ 
+		BufferedReader in = new BufferedReader( new InputStreamReader(con.getInputStream()) );
+		String inputLine;
+		StringBuffer response = new StringBuffer();
+ 
+		while ((inputLine = in.readLine()) != null) {
+			response.append(inputLine);
+		}
+		in.close();
+ 
+                //Aula pode estar em 3 estados
+                // Disponivel - mas ainda nao é possivel reservar
+                // Disponivel - possivel reservar
+                // Indisponivel e/ou esgotada
+                /*
+                String data = response.toString();
+                boolean isClassSoldOut = data.contains("Esgotado");
+                boolean isClassAvailable = data.contains("Disponível");
+                boolean isClassBookable = data.contains("bookAula");
+                
+                System.out.println(isClassSoldOut);
+                System.out.println(isClassAvailable);
+                System.out.println(isClassBookable);
+                System.out.println(response.toString());
+                */
+                //print result
+		System.out.println(response.toString());
+                return true;
+        }
+        
         
         public void bookClassHUT(){
         

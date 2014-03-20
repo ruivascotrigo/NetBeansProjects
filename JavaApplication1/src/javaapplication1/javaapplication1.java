@@ -90,7 +90,7 @@ public class javaapplication1 {
                 
                 
                 Date currentDate = new Date();
-             
+             /*
                 
                 for(Iterator<ClassHUT> i = classHUTList.iterator(); i.hasNext(); ) {
                     ClassHUT item = i.next();
@@ -115,7 +115,7 @@ public class javaapplication1 {
                         Thread.currentThread().interrupt();
                     }
                 }
-                
+                */
                 System.out.println("Trying to login");
                 if ( http.loginHUT(username, password) == false){
                     JOptionPane.showMessageDialog(null, "Login Falhou");
@@ -216,6 +216,9 @@ public class javaapplication1 {
             if ("".equals(phpCookie)) return false;
             //return this.sendGet(getClassURL + classId);
             //&date=2014-03-20
+            
+            // 
+            
             DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
             String url = getClassesURL + fitnessHutLocationId + "&date=" + df.format(day);
             
@@ -241,30 +244,29 @@ public class javaapplication1 {
 			response.append(inputLine);
 		}
 		in.close();
- 
-                //Aula pode estar em 3 estados
-                // Disponivel - mas ainda nao é possivel reservar
-                // Disponivel - possivel reservar
-                // Indisponivel e/ou esgotada
-                /*
-                String data = response.toString();
-                boolean isClassSoldOut = data.contains("Esgotado");
-                boolean isClassAvailable = data.contains("Disponível");
-                boolean isClassBookable = data.contains("bookAula");
-                
-                System.out.println(isClassSoldOut);
-                System.out.println(isClassAvailable);
-                System.out.println(isClassBookable);
-                System.out.println(response.toString());
-                */
-                //print result
+
         	System.out.println(response.toString());
+                
                 Document doc = Jsoup.parse(response.toString());
                 Elements links = doc.getElementsByTag("li");
+                
                 for (Element link : links) {
-                    String linkHref = link.attr("href");
-                    String linkText = link.text();
+                    Element e = link.child(0);
+                    String classId = e.attr("onclick");
+                    classId = classId.substring( classId.indexOf("(") + 1 , classId.lastIndexOf(")"));
+                    String classSchedule = e.child(0).child(0).text();
+                    String classInfo = e.child(1).child(0).text();
+                    String classDurationLocation = e.child(1).child(1).text();
+                    String classDuration = classDurationLocation.substring( 0 , classDurationLocation.indexOf(",") );
+                    String classLocation = classDurationLocation.substring( classDurationLocation.indexOf(",") + 1 );
+                    
+                    System.out.println(classId);
+                    System.out.println(classSchedule);
+                    System.out.println(classInfo);
+                    System.out.println(classDuration);
+                    System.out.println(classLocation);
                 }
+                
                 return true;
         }
         

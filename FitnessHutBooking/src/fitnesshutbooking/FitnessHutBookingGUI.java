@@ -7,16 +7,19 @@
 package fitnesshutbooking;
 
 import java.util.Date;
+import java.util.Vector;
 import javax.swing.table.AbstractTableModel;
 
 class MyTableModel extends AbstractTableModel {
     private final String[] columnNames = {"ClassID","Time","Name","Duration","Book?"};
-    private Object[][] data;
+    private Vector<Vector> rowData = new Vector<Vector>();
 
-    MyTableModel(Object[][] data) {
-        this.data = data;
+    
+    
+    MyTableModel(Vector<Vector> rowData) {
+        this.rowData = rowData;
     }
-    /*
+/*
     {
         {"Kathy", "Smith",
          "Snowboarding", new Integer(5), new Boolean(false)},
@@ -35,7 +38,7 @@ class MyTableModel extends AbstractTableModel {
     }
 
     public int getRowCount() {
-        return data.length;
+        return rowData.size();
     }
 
     public String getColumnName(int col) {
@@ -43,7 +46,7 @@ class MyTableModel extends AbstractTableModel {
     }
 
     public Object getValueAt(int row, int col) {
-        return data[row][col];
+        return rowData.elementAt(row).elementAt(col);
     }
 
     public Class getColumnClass(int c) {
@@ -57,19 +60,20 @@ class MyTableModel extends AbstractTableModel {
     public boolean isCellEditable(int row, int col) {
         //Note that the data/cell address is constant,
         //no matter where the cell appears onscreen.
-        if (col < 2) {
+        if (col < 4) {
             return false;
         } else {
             return true;
         }
     }
-
     /*
      * Don't need to implement this method unless your table's
      * data can change.
      */
+
     public void setValueAt(Object value, int row, int col) {
-        data[row][col] = value;
+        rowData.elementAt(row).set(col, value) ;
+        //rowData.insertElementAt(rowData, col);
         fireTableCellUpdated(row, col);
     }
 
@@ -90,21 +94,14 @@ class ClassHUT
  */
 public class FitnessHutBookingGUI extends javax.swing.JFrame {
     
+  
     private final String tableColumnNames[] = {"ClassID","Time","Name","Duration","Book?"};
-    private ClassHUT todayClasses[];
-    private ClassHUT tomorrowClasses[];
-    private Object[][] teste =     {
-        {"Kathy", "Smith",
-         "Snowboarding", new Integer(5), new Boolean(false)},
-        {"John", "Doe",
-         "Rowing", new Integer(3), new Boolean(true)},
-        {"Sue", "Black",
-         "Knitting", new Integer(2), new Boolean(false)},
-        {"Jane", "White",
-         "Speed reading", new Integer(20), new Boolean(true)},
-        {"Joe", "Brown",
-         "Pool", new Integer(10), new Boolean(false)}
-        };
+   //private ClassHUT todayClasses[];
+    //private ClassHUT tomorrowClasses[];
+    
+    private Vector<Vector> todayClasses = new Vector<Vector>();
+    private Vector<Vector> tomorrowClasses = new Vector<Vector>();
+    
     /**
      * Creates new form FitnessHutBookingGUI
      */
@@ -172,12 +169,12 @@ public class FitnessHutBookingGUI extends javax.swing.JFrame {
 
         jComboBox1.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
 
-        jTable1.setModel(new MyTableModel(teste));
+        jTable1.setModel(new MyTableModel(todayClasses));
         jScrollPane1.setViewportView(jTable1);
 
         jTabbedPane1.addTab("Today", jScrollPane1);
 
-        jTable2.setModel(new MyTableModel(teste));
+        jTable2.setModel(new MyTableModel(tomorrowClasses));
         jScrollPane2.setViewportView(jTable2);
 
         jTabbedPane1.addTab("Tomorrow", jScrollPane2);
@@ -264,7 +261,15 @@ public class FitnessHutBookingGUI extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton1MouseClicked
 
     private void jButton2MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButton2MouseClicked
-        // TODO add your handling code here:
+        Vector row = new Vector();
+        row.add("40100");
+        row.add("18:00");
+        row.add("BodyPumpC");
+        row.add("60min");
+        row.add(new Boolean(false));
+        this.todayClasses.add(row);
+        ((javax.swing.table.AbstractTableModel) this.jTable1.getModel()).fireTableDataChanged();
+        
         
     }//GEN-LAST:event_jButton2MouseClicked
 
@@ -295,6 +300,9 @@ public class FitnessHutBookingGUI extends javax.swing.JFrame {
         }
         //</editor-fold>
 
+        
+        
+        
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {

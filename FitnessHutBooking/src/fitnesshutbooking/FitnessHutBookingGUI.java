@@ -9,30 +9,39 @@ package fitnesshutbooking;
 import java.util.Date;
 import java.util.Vector;
 import javax.swing.table.AbstractTableModel;
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Vector;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JOptionPane;
+import javax.swing.table.DefaultTableCellRenderer;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
 
 class MyTableModel extends AbstractTableModel {
-    private final String[] columnNames = {"ClassID","Time","Name","Duration","Book?"};
+    private final String[] columnNames = {"ClassId","Time","Name","Duration","Location","Book?"};
     private Vector<Vector> rowData = new Vector<Vector>();
 
-    
-    
     MyTableModel(Vector<Vector> rowData) {
         this.rowData = rowData;
     }
-/*
-    {
-        {"Kathy", "Smith",
-         "Snowboarding", new Integer(5), new Boolean(false)},
-        {"John", "Doe",
-         "Rowing", new Integer(3), new Boolean(true)},
-        {"Sue", "Black",
-         "Knitting", new Integer(2), new Boolean(false)},
-        {"Jane", "White",
-         "Speed reading", new Integer(20), new Boolean(true)},
-        {"Joe", "Brown",
-         "Pool", new Integer(10), new Boolean(false)}
-        };
-*/
+
     public int getColumnCount() {
         return columnNames.length;
     }
@@ -70,37 +79,52 @@ class MyTableModel extends AbstractTableModel {
      * Don't need to implement this method unless your table's
      * data can change.
      */
-
     public void setValueAt(Object value, int row, int col) {
         rowData.elementAt(row).set(col, value) ;
-        //rowData.insertElementAt(rowData, col);
         fireTableCellUpdated(row, col);
     }
 
 }
 
-class ClassHUT
-{
-    public String classId;
-    public String className;
-    public Date classDateTime;
-    public String classDuration;
-    public boolean classBooked;
-};
+class DateRenderer extends DefaultTableCellRenderer {
 
-/**
- *
- * @author Rui Trigo
- */
+    private SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
+
+    @Override
+    public void setValue(Object value) {
+        if ((value != null)) {
+            value = sdf.format(value);
+        }
+        super.setValue(value);
+    }
+}
+
+
+
+
 public class FitnessHutBookingGUI extends javax.swing.JFrame {
     
-  
-    private final String tableColumnNames[] = {"ClassID","Time","Name","Duration","Book?"};
-   //private ClassHUT todayClasses[];
-    //private ClassHUT tomorrowClasses[];
+    private static final String USER_AGENT = "Mozilla/5.0";
+    private static final String username = "ruivascotrigo@hotmail.com";
+    private static final String password = "a#yQeZyMu";
+    private static final String loginURL = "http://m.fitnesshut.pt/includes/login.php"; //POST
+    private static final String bookClassURL = "http://m.fitnesshut.pt/includes/myhut.php"; //POST
+    private static final String getClassAvailabilityURL = "http://m.fitnesshut.pt/pages/aula.php?id="; //GET
+    private static final String getClassesURL = "http://m.fitnesshut.pt/pages/get-aulas.php?id="; //GET
+    //GET http://m.fitnesshut.pt/pages/get-aulas.php?id=5&date=2014-03-20 HTTP/1.1
+    // Buscar aulas de Odivelas do proprio dia http://m.fitnesshut.pt/pages/aulas.php?id=5 //GET
+    // Buscar aulas de Odivelas do dia especificado http://m.fitnesshut.pt/pages/get-aulas.php?id=5&date=2014-03-20
+
+    private static final long maxWaitTime = 604800; //604800 seconds is 7 days
+    private static final long beforeWaitTime = 60; //60 is in secs
+    private static final long bookClassPeriod = 36000; //36000 seconds is 10 hours
+    
+    private static final String odivelasHUT = "5";
     
     private Vector<Vector> todayClasses = new Vector<Vector>();
     private Vector<Vector> tomorrowClasses = new Vector<Vector>();
+    
+    private String phpCookie = "";
     
     /**
      * Creates new form FitnessHutBookingGUI
@@ -118,43 +142,35 @@ public class FitnessHutBookingGUI extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jButton1 = new javax.swing.JButton();
-        jButton2 = new javax.swing.JButton();
-        jTextField1 = new javax.swing.JTextField();
-        jLabel1 = new javax.swing.JLabel();
-        jSeparator1 = new javax.swing.JSeparator();
+        jButton1_Start = new javax.swing.JButton();
+        jButton2_GetClasses = new javax.swing.JButton();
         jSeparator2 = new javax.swing.JSeparator();
         jLabel2 = new javax.swing.JLabel();
         jLabel3 = new javax.swing.JLabel();
         jLabel4 = new javax.swing.JLabel();
-        jTextField2 = new javax.swing.JTextField();
-        jTextField3 = new javax.swing.JTextField();
-        jComboBox1 = new javax.swing.JComboBox();
+        jTextField_username = new javax.swing.JTextField();
+        jTextField3_password = new javax.swing.JTextField();
         jTabbedPane1 = new javax.swing.JTabbedPane();
         jScrollPane1 = new javax.swing.JScrollPane();
-        jTable1 = new javax.swing.JTable();
+        jTable1_today = new javax.swing.JTable();
         jScrollPane2 = new javax.swing.JScrollPane();
-        jTable2 = new javax.swing.JTable();
+        jTable2_tomorrow = new javax.swing.JTable();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
-        jButton1.setText("Start");
-        jButton1.addMouseListener(new java.awt.event.MouseAdapter() {
+        jButton1_Start.setText("Start");
+        jButton1_Start.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
-                jButton1MouseClicked(evt);
+                jButton1_StartMouseClicked(evt);
             }
         });
 
-        jButton2.setText("Add Booking");
-        jButton2.addMouseListener(new java.awt.event.MouseAdapter() {
+        jButton2_GetClasses.setText("Get Classes");
+        jButton2_GetClasses.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
-                jButton2MouseClicked(evt);
+                jButton2_GetClassesMouseClicked(evt);
             }
         });
-
-        jTextField1.setText("jTextField1");
-
-        jLabel1.setText("Class Id:");
 
         jLabel2.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         jLabel2.setText("FitnessHut Automatic Booking System");
@@ -163,19 +179,15 @@ public class FitnessHutBookingGUI extends javax.swing.JFrame {
 
         jLabel4.setText("Password:");
 
-        jTextField2.setText("jTextField2");
-
-        jTextField3.setText("jTextField3");
-
-        jComboBox1.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
-
-        jTable1.setModel(new MyTableModel(todayClasses));
-        jScrollPane1.setViewportView(jTable1);
+        jTable1_today.setModel(new MyTableModel(todayClasses));
+        jTable1_today.getColumnModel().getColumn(1).setCellRenderer(new DateRenderer());
+        jScrollPane1.setViewportView(jTable1_today);
 
         jTabbedPane1.addTab("Today", jScrollPane1);
 
-        jTable2.setModel(new MyTableModel(tomorrowClasses));
-        jScrollPane2.setViewportView(jTable2);
+        jTable2_tomorrow.setModel(new MyTableModel(tomorrowClasses));
+        jTable2_tomorrow.getColumnModel().getColumn(1).setCellRenderer(new DateRenderer());
+        jScrollPane2.setViewportView(jTable2_tomorrow);
 
         jTabbedPane1.addTab("Tomorrow", jScrollPane2);
 
@@ -183,35 +195,26 @@ public class FitnessHutBookingGUI extends javax.swing.JFrame {
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jSeparator1)
             .addComponent(jSeparator2)
+            .addComponent(jTabbedPane1, javax.swing.GroupLayout.Alignment.TRAILING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(layout.createSequentialGroup()
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(jLabel3)
-                                    .addComponent(jLabel1))
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 90, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addGroup(layout.createSequentialGroup()
-                                        .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, 230, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                        .addComponent(jLabel4)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(jTextField3, javax.swing.GroupLayout.PREFERRED_SIZE, 67, javax.swing.GroupLayout.PREFERRED_SIZE))))
-                            .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 41, Short.MAX_VALUE)
-                        .addComponent(jButton2))
+                        .addComponent(jLabel3)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jTextField_username, javax.swing.GroupLayout.PREFERRED_SIZE, 230, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(jLabel4)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jTextField3_password, javax.swing.GroupLayout.PREFERRED_SIZE, 95, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 114, Short.MAX_VALUE)
+                        .addComponent(jButton2_GetClasses))
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                         .addGap(0, 0, Short.MAX_VALUE)
-                        .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 91, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addComponent(jButton1_Start, javax.swing.GroupLayout.PREFERRED_SIZE, 91, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap())
-            .addComponent(jTabbedPane1, javax.swing.GroupLayout.Alignment.TRAILING)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -221,58 +224,376 @@ public class FitnessHutBookingGUI extends javax.swing.JFrame {
                 .addComponent(jSeparator2, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel3)
-                            .addComponent(jLabel4)
-                            .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jTextField3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel1))
-                        .addGap(18, 18, 18)
-                        .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(10, 10, 10))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 86, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)))
-                .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 17, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jTabbedPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 383, Short.MAX_VALUE)
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(jLabel3)
+                        .addComponent(jLabel4)
+                        .addComponent(jTextField_username, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jTextField3_password, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jButton2_GetClasses))
                 .addGap(18, 18, 18)
-                .addComponent(jButton1)
+                .addComponent(jTabbedPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 429, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(jButton1_Start)
                 .addContainerGap())
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void jButton1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButton1MouseClicked
+    private void jButton1_StartMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButton1_StartMouseClicked
         // TODO add your handling code here:
-        System.out.println("teste");
+        System.out.println("Clicked the start button");
         //this.jTable1.setValueAt("TESTE", 0, 0);
         //this.jTable1.setValueAt(this.jTable1.getRowCount(), 0, 0);
         
-        for (int i = 0; i < this.jTable1.getRowCount(); ++i){
-            System.out.println(this.jTable1.getValueAt( i, this.jTable1.getColumnCount() - 1 ));
+        for (int i = 0; i < this.jTable1_today.getRowCount(); ++i){
+            Boolean classBookFlag = (Boolean) this.jTable1_today.getValueAt( i, this.jTable1_today.getColumnCount() - 1 );
+            
+            if ( classBookFlag ){
+                // {"ClassId","Time","Name","Duration","Location","Book?"};
+                
+                String classId = (String) todayClasses.get(i).get(0); //classId
+                Date dia = (Date) todayClasses.get(i).get(1); // Date and time of the class
+                
+                Thread t1 = new Thread(new Runnable() {
+                     public void run(){
+                         //getClassAvailabilityHUT(classId);
+                          // code goes here.
+                     }}); t1.start();
+                
+            }
+            System.out.println(classBookFlag);
             
         }
-    }//GEN-LAST:event_jButton1MouseClicked
+    }//GEN-LAST:event_jButton1_StartMouseClicked
 
-    private void jButton2MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButton2MouseClicked
-        Vector row = new Vector();
-        row.add("40100");
-        row.add("18:00");
-        row.add("BodyPumpC");
-        row.add("60min");
-        row.add(new Boolean(false));
-        this.todayClasses.add(row);
-        ((javax.swing.table.AbstractTableModel) this.jTable1.getModel()).fireTableDataChanged();
+    private void jButton2_GetClassesMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButton2_GetClassesMouseClicked
+        System.out.println("Clicked the get classes button");
+        
+        String user = this.jTextField_username.getText();
+        String pass = this.jTextField3_password.getText();
+        
+        Date today = new Date();    
+        Date tomorrow = new Date(today.getTime() + (1000 * 60 * 60 * 24));
         
         
-    }//GEN-LAST:event_jButton2MouseClicked
+        System.out.println("Trying to login");
+        try {
+            if ( loginHUT(user, pass) == false){
+                JOptionPane.showMessageDialog(null, "Login Falhou");
+                return;
+            }
+        } catch (Exception ex) {
+            Logger.getLogger(FitnessHutBookingGUI.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        try {
+            if ( getClassesHUT(odivelasHUT , today , todayClasses ) == false ){
+                JOptionPane.showMessageDialog(null, "Nao existe cookie");
+                return;
+            }
+        } catch (Exception ex) {
+            Logger.getLogger(FitnessHutBookingGUI.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        try {
+            if ( getClassesHUT(odivelasHUT , tomorrow , tomorrowClasses ) == false ){
+                JOptionPane.showMessageDialog(null, "Nao existe cookie");
+                return;
+            }
+        } catch (Exception ex) {
+            Logger.getLogger(FitnessHutBookingGUI.class.getName()).log(Level.SEVERE, null, ex);
+        }
 
+        ((javax.swing.table.AbstractTableModel) this.jTable1_today.getModel()).fireTableDataChanged();
+        ((javax.swing.table.AbstractTableModel) this.jTable2_tomorrow.getModel()).fireTableDataChanged();
+    }//GEN-LAST:event_jButton2_GetClassesMouseClicked
+
+    public boolean loginHUT(String user, String pass) throws Exception{
+        return this.sendPost(loginURL, "email=" + user + "&password=" + pass );
+
+    }
+    
+    private boolean getClassAvailabilityHUT(String classId) throws Exception{
+        if ("".equals(phpCookie)) return false;
+        //return this.sendGet(getClassURL + classId);
+        String url = getClassAvailabilityURL + classId;
+
+        URL obj = new URL(url);
+        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+
+            // optional default is GET
+            con.setRequestMethod("GET");
+
+            //add request header
+            con.setRequestProperty("User-Agent", USER_AGENT);
+            con.setRequestProperty("Cookie", phpCookie);
+
+            int responseCode = con.getResponseCode();
+            System.out.println("\nSending 'GET' request to URL : " + url);
+            System.out.println("Response Code : " + responseCode);
+
+            BufferedReader in = new BufferedReader( new InputStreamReader(con.getInputStream()) );
+            String inputLine;
+            StringBuffer response = new StringBuffer();
+
+            while ((inputLine = in.readLine()) != null) {
+                    response.append(inputLine);
+            }
+            in.close();
+
+            //Aula pode estar em 3 estados
+            // Disponivel - mas ainda nao é possivel reservar
+            // Disponivel - possivel reservar
+            // Indisponivel e/ou esgotada
+
+            String data = response.toString();
+            boolean isClassSoldOut = data.contains("Esgotado");
+            boolean isClassAvailable = data.contains("Disponível");
+            boolean isClassBookable = data.contains("bookAula");
+
+            System.out.println(isClassSoldOut);
+            System.out.println(isClassAvailable);
+            System.out.println(isClassBookable);
+            System.out.println(response.toString());
+
+            return (isClassAvailable & isClassBookable);
+            //print result
+            //System.out.println(response.toString());
+    }
+
+    private boolean getClassesHUT(String fitnessHutLocationId, Date day, Vector<Vector> data) throws Exception{
+        if ("".equals(phpCookie)) return false;
+        
+  
+        
+        if ( data != null ) {data.clear();}
+
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+        String url = getClassesURL + fitnessHutLocationId + "&date=" + df.format(day);
+        
+        URL obj = new URL(url);
+        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+
+            // optional default is GET
+            con.setRequestMethod("GET");
+
+            //add request header
+            con.setRequestProperty("User-Agent", USER_AGENT);
+            con.setRequestProperty("Cookie", phpCookie);
+
+            int responseCode = con.getResponseCode();
+            System.out.println("\nSending 'GET' request to URL : " + url);
+            System.out.println("Response Code : " + responseCode);
+
+            BufferedReader in = new BufferedReader( new InputStreamReader(con.getInputStream()) );
+            String inputLine;
+            StringBuffer response = new StringBuffer();
+
+            while ((inputLine = in.readLine()) != null) {
+                    response.append(inputLine);
+            }
+            in.close();
+
+            System.out.println(response.toString());
+
+            Document doc = Jsoup.parse(response.toString());
+            
+            //Element classList = doc.getElementById("aulas-list");
+            Elements links = doc.getElementsByTag("li");
+            
+            for (Element link : links) {
+                Element e = link.child(0);
+                String classId = e.attr("onclick");
+                classId = classId.substring( classId.indexOf("(") + 1 , classId.lastIndexOf(")"));
+                String classTime = e.child(0).child(0).text();
+                String classInfo = e.child(1).child(0).text();
+                String classDurationLocation = e.child(1).child(1).text();
+                String classDuration = classDurationLocation.substring( 0 , classDurationLocation.indexOf(",") );
+                String classLocation = classDurationLocation.substring( classDurationLocation.indexOf(",") + 1 );
+
+
+                DateFormat datef = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+                Date dia = datef.parse( df.format(day) + " " + classTime );
+                 
+                
+                Vector row = new Vector();
+                row.add(classId);
+                //row.add(classSchedule);
+                row.add(dia);
+                row.add(classInfo);
+                row.add(classDuration);
+                row.add(classLocation);
+                row.add(new Boolean(false));
+                data.add(row);
+
+            }
+
+            return true;
+    }
+
+    private boolean bookClassHUT(String classId, String userId, String data) throws Exception{
+        if ("".equals(phpCookie)) return false;
+        
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+        String url = bookClassURL ;
+        String urlParameters = "date=" + df.format(data) + "&aula=" + classId + "&socio=" + userId + "&op=book-aula" ;
+                
+                
+        URL obj = new URL(url);
+        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+
+        //add reuqest header
+        con.setRequestMethod("POST");
+        con.setRequestProperty("User-Agent", USER_AGENT);
+        con.setRequestProperty("Accept-Language", "en-US,en;q=0.5");
+        con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+
+        // Send post request
+        con.setDoOutput(true);
+        DataOutputStream wr = new DataOutputStream(con.getOutputStream());
+        wr.writeBytes(urlParameters);
+        wr.flush();
+        wr.close();
+
+        int responseCode = con.getResponseCode();
+        System.out.println("\nSending 'POST' request to URL : " + url);
+        System.out.println("Post parameters : " + urlParameters);
+        System.out.println("Response Code : " + responseCode);
+
+        if (con.getResponseCode() == HttpURLConnection.HTTP_OK){
+            Object o = con.getContent();
+            System.out.println("Content-Type: " + con.getContentType());
+        }
+
+        BufferedReader in = new BufferedReader(
+                new InputStreamReader(con.getInputStream()));
+        String inputLine;
+        StringBuffer response = new StringBuffer();
+
+        while ((inputLine = in.readLine()) != null) {
+                response.append(inputLine);
+        }
+        in.close();
+      
+        if ( "  1".equals(response.toString()) ) {
+                    System.out.println("Aula marcada com sucesso");
+                    return true;
+        }
+
+        return false;
+        
+        
+     /*   
+        resultados
+            1 aulareservada
+            -1 Não é possível reservar mais aulas! Máximo 2 aulas por dia.
+            -2 Não pode reservar aulas! Não tem acesso a marcação de aulas.
+            -3 Não pode reservar a aula! Aula Esgotada.
+            nada nao sei
+*/
+        
+        
+/*
+//Book Aula
+function bookAula(aula, socio) {
+	var op = "book-aula";
+	var data = data;
+	var aula = aula;
+	var socio = socio;
+	
+	$.post("../includes/myhut.php", { 
+		data: data,
+		aula: aula,
+		socio: socio,
+		op: op
+		}, 
+			
+	function(data) {
+		if(data == 1) {
+			$.mobile.changePage( "info.php?op=3", { role: "dialog" });	
+			loadAulasReservadas();
+		}
+		else if(data == -1)
+			$.mobile.changePage( "info.php?op=4", { role: "dialog" });
+		else if(data == -2)
+			$.mobile.changePage( "info.php?op=11", { role: "dialog" });
+		else if(data == -3)
+			$.mobile.changePage( "info.php?op=10", { role: "dialog" });
+		else
+			$.mobile.changePage( "info.php?op=5&i="+escape(data), { role: "dialog" });
+	});
+			
+	return false;
+}
+*/
+
+    }   
+    
+    
+    // HTTP POST request
+    private boolean sendPost(String url, String urlParameters) throws Exception {
+
+            Boolean isAuthOK = false;
+            URL obj = new URL(url);
+            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+
+            //add reuqest header
+            con.setRequestMethod("POST");
+            con.setRequestProperty("User-Agent", USER_AGENT);
+            con.setRequestProperty("Accept-Language", "en-US,en;q=0.5");
+            con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+
+            // Send post request
+            con.setDoOutput(true);
+            DataOutputStream wr = new DataOutputStream(con.getOutputStream());
+            wr.writeBytes(urlParameters);
+            wr.flush();
+            wr.close();
+
+            int responseCode = con.getResponseCode();
+            System.out.println("\nSending 'POST' request to URL : " + url);
+            System.out.println("Post parameters : " + urlParameters);
+            System.out.println("Response Code : " + responseCode);
+
+            if (con.getResponseCode() == HttpURLConnection.HTTP_OK){
+                Object o = con.getContent();
+                System.out.println("Content-Type: " + con.getContentType());
+            }
+
+            BufferedReader in = new BufferedReader(
+                    new InputStreamReader(con.getInputStream()));
+            String inputLine;
+            StringBuffer response = new StringBuffer();
+
+            while ((inputLine = in.readLine()) != null) {
+                    response.append(inputLine);
+            }
+            in.close();
+
+            if ( "  -1".equals(response.toString()) ) {
+                System.out.println("Failed Auth");
+            } else if ( "  -2".equals(response.toString()) ) {
+
+                System.out.println("Failed Auth");
+            } else{
+                System.out.println("Auth OK");
+                phpCookie = con.getHeaderField("Set-Cookie");
+                isAuthOK = true;
+            }
+            //print result
+            System.out.println(response.toString());
+            System.out.println(phpCookie);
+
+            return isAuthOK;
+
+    }
+    
+    
+    
+    
+    
+    
     /**
      * @param args the command line arguments
      */
@@ -312,22 +633,18 @@ public class FitnessHutBookingGUI extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton jButton1;
-    private javax.swing.JButton jButton2;
-    private javax.swing.JComboBox jComboBox1;
-    private javax.swing.JLabel jLabel1;
+    private javax.swing.JButton jButton1_Start;
+    private javax.swing.JButton jButton2_GetClasses;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
-    private javax.swing.JSeparator jSeparator1;
     private javax.swing.JSeparator jSeparator2;
     private javax.swing.JTabbedPane jTabbedPane1;
-    private javax.swing.JTable jTable1;
-    private javax.swing.JTable jTable2;
-    private javax.swing.JTextField jTextField1;
-    private javax.swing.JTextField jTextField2;
-    private javax.swing.JTextField jTextField3;
+    private javax.swing.JTable jTable1_today;
+    private javax.swing.JTable jTable2_tomorrow;
+    private javax.swing.JTextField jTextField3_password;
+    private javax.swing.JTextField jTextField_username;
     // End of variables declaration//GEN-END:variables
 }

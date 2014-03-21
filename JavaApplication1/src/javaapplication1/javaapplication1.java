@@ -24,6 +24,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Vector;
 import javax.swing.JOptionPane;
 
 import org.jsoup.Jsoup;
@@ -42,13 +43,13 @@ class ClassHUT
  
 public class javaapplication1 {
  
-	private final String USER_AGENT = "Mozilla/5.0";
+        private static final String USER_AGENT = "Mozilla/5.0";
         private static final String username = "ruivascotrigo%40hotmail.com";
         private static final String password = "a%23yQeZyMu";
-        private final String loginURL = "http://m.fitnesshut.pt/includes/login.php"; //POST
-        private final String bookClassURL = "http://m.fitnesshut.pt/includes/login.php"; //POST
-        private final String getClassAvailabilityURL = "http://m.fitnesshut.pt/pages/aula.php?id="; //GET
-        private final String getClassesURL = "http://m.fitnesshut.pt/pages/aulas.php?id="; //GET
+        private static final String loginURL = "http://m.fitnesshut.pt/includes/login.php"; //POST
+        private static final String bookClassURL = "http://m.fitnesshut.pt/includes/login.php"; //POST
+        private static final String getClassAvailabilityURL = "http://m.fitnesshut.pt/pages/aula.php?id="; //GET
+        private static final String getClassesURL = "http://m.fitnesshut.pt/pages/aulas.php?id="; //GET
         
         //GET http://m.fitnesshut.pt/pages/get-aulas.php?id=5&date=2014-03-20 HTTP/1.1
 	// Buscar aulas de Odivelas do proprio dia http://m.fitnesshut.pt/pages/aulas.php?id=5 //GET
@@ -59,6 +60,7 @@ public class javaapplication1 {
         private static final long beforeWaitTime = 60; //60 is in secs
         private static final long bookClassPeriod = 36000; //36000 seconds is 10 hours
         
+        private Vector<Vector> rowData = new Vector<Vector>();
         
 	public static void main(String[] args) throws Exception {
             
@@ -249,7 +251,7 @@ public class javaapplication1 {
                 
                 Document doc = Jsoup.parse(response.toString());
                 Elements links = doc.getElementsByTag("li");
-                
+                links.
                 for (Element link : links) {
                     Element e = link.child(0);
                     String classId = e.attr("onclick");
@@ -259,6 +261,15 @@ public class javaapplication1 {
                     String classDurationLocation = e.child(1).child(1).text();
                     String classDuration = classDurationLocation.substring( 0 , classDurationLocation.indexOf(",") );
                     String classLocation = classDurationLocation.substring( classDurationLocation.indexOf(",") + 1 );
+                    
+                    Vector row = new Vector();
+                    row.add(classId);
+                    row.add(classSchedule);
+                    row.add(classInfo);
+                    row.add(classDuration);
+                    row.add(classLocation);
+                    row.add(new Boolean(false));
+                    this.rowData.add(row);
                     
                     System.out.println(classId);
                     System.out.println(classSchedule);

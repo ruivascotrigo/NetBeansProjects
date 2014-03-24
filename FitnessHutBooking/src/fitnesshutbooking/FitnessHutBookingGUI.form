@@ -42,7 +42,7 @@
                   </Group>
                   <Group type="102" alignment="1" attributes="0">
                       <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
-                      <Component id="jButton1_Start" min="-2" pref="91" max="-2" attributes="0"/>
+                      <Component id="jToggleButton1StartClassBooking" min="-2" max="-2" attributes="0"/>
                   </Group>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
@@ -68,21 +68,13 @@
               <EmptySpace type="separate" max="-2" attributes="0"/>
               <Component id="jTabbedPane1" pref="429" max="32767" attributes="0"/>
               <EmptySpace type="unrelated" max="-2" attributes="0"/>
-              <Component id="jButton1_Start" min="-2" max="-2" attributes="0"/>
+              <Component id="jToggleButton1StartClassBooking" min="-2" max="-2" attributes="0"/>
               <EmptySpace max="-2" attributes="0"/>
           </Group>
       </Group>
     </DimensionLayout>
   </Layout>
   <SubComponents>
-    <Component class="javax.swing.JButton" name="jButton1_Start">
-      <Properties>
-        <Property name="text" type="java.lang.String" value="Start"/>
-      </Properties>
-      <Events>
-        <EventHandler event="mouseClicked" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="jButton1_StartMouseClicked"/>
-      </Events>
-    </Component>
     <Component class="javax.swing.JButton" name="jButton2_GetClasses">
       <Properties>
         <Property name="text" type="java.lang.String" value="Get Classes"/>
@@ -112,8 +104,14 @@
       </Properties>
     </Component>
     <Component class="javax.swing.JTextField" name="jTextField_username">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="ruivascotrigo@hotmail.com"/>
+      </Properties>
     </Component>
     <Component class="javax.swing.JTextField" name="jTextField3_password">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="a#yQeZyMu"/>
+      </Properties>
     </Component>
     <Container class="javax.swing.JTabbedPane" name="jTabbedPane1">
 
@@ -136,7 +134,7 @@
             <Component class="javax.swing.JTable" name="jTable1_today">
               <Properties>
                 <Property name="model" type="javax.swing.table.TableModel" editor="org.netbeans.modules.form.RADConnectionPropertyEditor" postCode="jTable1_today.getColumnModel().getColumn(1).setCellRenderer(new DateRenderer());">
-                  <Connection code="new MyTableModel(todayClasses)" type="code"/>
+                  <Connection code="new MyTableModel(this.instanceOfFitnessHutBooking.todayClasses)" type="code"/>
                 </Property>
                 <Property name="columnModel" type="javax.swing.table.TableColumnModel" editor="org.netbeans.modules.form.editors2.TableColumnModelEditor">
                   <TableColumnModel selectionModel="0"/>
@@ -168,7 +166,7 @@
             <Component class="javax.swing.JTable" name="jTable2_tomorrow">
               <Properties>
                 <Property name="model" type="javax.swing.table.TableModel" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
-                  <Connection code="new MyTableModel(tomorrowClasses)" type="code"/>
+                  <Connection code="new MyTableModel(this.instanceOfFitnessHutBooking.tomorrowClasses)" type="code"/>
                 </Property>
               </Properties>
               <AuxValues>
@@ -179,5 +177,13 @@
         </Container>
       </SubComponents>
     </Container>
+    <Component class="javax.swing.JToggleButton" name="jToggleButton1StartClassBooking">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Start Class Booking"/>
+      </Properties>
+      <Events>
+        <EventHandler event="itemStateChanged" listener="java.awt.event.ItemListener" parameters="java.awt.event.ItemEvent" handler="jToggleButton1StartClassBookingItemStateChanged"/>
+      </Events>
+    </Component>
   </SubComponents>
 </Form>

@@ -103,34 +103,17 @@ class DateRenderer extends DefaultTableCellRenderer {
 
 
 public class FitnessHutBookingGUI extends javax.swing.JFrame {
-    
-    private static final String USER_AGENT = "Mozilla/5.0";
-    private static final String username = "ruivascotrigo@hotmail.com";
-    private static final String password = "a#yQeZyMu";
-    private static final String loginURL = "http://m.fitnesshut.pt/includes/login.php"; //POST
-    private static final String bookClassURL = "http://m.fitnesshut.pt/includes/myhut.php"; //POST
-    private static final String getClassAvailabilityURL = "http://m.fitnesshut.pt/pages/aula.php?id="; //GET
-    private static final String getClassesURL = "http://m.fitnesshut.pt/pages/get-aulas.php?id="; //GET
-    //GET http://m.fitnesshut.pt/pages/get-aulas.php?id=5&date=2014-03-20 HTTP/1.1
-    // Buscar aulas de Odivelas do proprio dia http://m.fitnesshut.pt/pages/aulas.php?id=5 //GET
-    // Buscar aulas de Odivelas do dia especificado http://m.fitnesshut.pt/pages/get-aulas.php?id=5&date=2014-03-20
-
-    private static final long maxWaitTime = 604800; //604800 seconds is 7 days
-    private static final long beforeWaitTime = 60; //60 is in secs
-    private static final long bookClassPeriod = 36000; //36000 seconds is 10 hours
-    
-    private static final String odivelasHUT = "5";
-    
-    private Vector<Vector> todayClasses = new Vector<Vector>();
-    private Vector<Vector> tomorrowClasses = new Vector<Vector>();
-    
-    private String phpCookie = "";
+    FitnessHutBooking instanceOfFitnessHutBooking;
+    Vector<Thread> classBookingThreads;
     
     /**
      * Creates new form FitnessHutBookingGUI
      */
     public FitnessHutBookingGUI() {
+        instanceOfFitnessHutBooking = new FitnessHutBooking();
+        classBookingThreads = new Vector<Thread>();
         initComponents();
+        
     }
 
     /**
@@ -142,7 +125,6 @@ public class FitnessHutBookingGUI extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jButton1_Start = new javax.swing.JButton();
         jButton2_GetClasses = new javax.swing.JButton();
         jSeparator2 = new javax.swing.JSeparator();
         jLabel2 = new javax.swing.JLabel();
@@ -155,15 +137,9 @@ public class FitnessHutBookingGUI extends javax.swing.JFrame {
         jTable1_today = new javax.swing.JTable();
         jScrollPane2 = new javax.swing.JScrollPane();
         jTable2_tomorrow = new javax.swing.JTable();
+        jToggleButton1StartClassBooking = new javax.swing.JToggleButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-
-        jButton1_Start.setText("Start");
-        jButton1_Start.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                jButton1_StartMouseClicked(evt);
-            }
-        });
 
         jButton2_GetClasses.setText("Get Classes");
         jButton2_GetClasses.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -179,17 +155,28 @@ public class FitnessHutBookingGUI extends javax.swing.JFrame {
 
         jLabel4.setText("Password:");
 
-        jTable1_today.setModel(new MyTableModel(todayClasses));
+        jTextField_username.setText("ruivascotrigo@hotmail.com");
+
+        jTextField3_password.setText("a#yQeZyMu");
+
+        jTable1_today.setModel(new MyTableModel(this.instanceOfFitnessHutBooking.todayClasses));
         jTable1_today.getColumnModel().getColumn(1).setCellRenderer(new DateRenderer());
         jScrollPane1.setViewportView(jTable1_today);
 
         jTabbedPane1.addTab("Today", jScrollPane1);
 
-        jTable2_tomorrow.setModel(new MyTableModel(tomorrowClasses));
+        jTable2_tomorrow.setModel(new MyTableModel(this.instanceOfFitnessHutBooking.tomorrowClasses));
         jTable2_tomorrow.getColumnModel().getColumn(1).setCellRenderer(new DateRenderer());
         jScrollPane2.setViewportView(jTable2_tomorrow);
 
         jTabbedPane1.addTab("Tomorrow", jScrollPane2);
+
+        jToggleButton1StartClassBooking.setText("Start Class Booking");
+        jToggleButton1StartClassBooking.addItemListener(new java.awt.event.ItemListener() {
+            public void itemStateChanged(java.awt.event.ItemEvent evt) {
+                jToggleButton1StartClassBookingItemStateChanged(evt);
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -213,7 +200,7 @@ public class FitnessHutBookingGUI extends javax.swing.JFrame {
                         .addComponent(jButton2_GetClasses))
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                         .addGap(0, 0, Short.MAX_VALUE)
-                        .addComponent(jButton1_Start, javax.swing.GroupLayout.PREFERRED_SIZE, 91, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addComponent(jToggleButton1StartClassBooking)))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -233,39 +220,12 @@ public class FitnessHutBookingGUI extends javax.swing.JFrame {
                 .addGap(18, 18, 18)
                 .addComponent(jTabbedPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 429, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(jButton1_Start)
+                .addComponent(jToggleButton1StartClassBooking)
                 .addContainerGap())
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
-
-    private void jButton1_StartMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButton1_StartMouseClicked
-        // TODO add your handling code here:
-        System.out.println("Clicked the start button");
-        //this.jTable1.setValueAt("TESTE", 0, 0);
-        //this.jTable1.setValueAt(this.jTable1.getRowCount(), 0, 0);
-        
-        for (int i = 0; i < this.jTable1_today.getRowCount(); ++i){
-            Boolean classBookFlag = (Boolean) this.jTable1_today.getValueAt( i, this.jTable1_today.getColumnCount() - 1 );
-            
-            if ( classBookFlag ){
-                // {"ClassId","Time","Name","Duration","Location","Book?"};
-                
-                String classId = (String) todayClasses.get(i).get(0); //classId
-                Date dia = (Date) todayClasses.get(i).get(1); // Date and time of the class
-                
-                Thread t1 = new Thread(new Runnable() {
-                     public void run(){
-                         //getClassAvailabilityHUT(classId);
-                          // code goes here.
-                     }}); t1.start();
-                
-            }
-            System.out.println(classBookFlag);
-            
-        }
-    }//GEN-LAST:event_jButton1_StartMouseClicked
 
     private void jButton2_GetClassesMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButton2_GetClassesMouseClicked
         System.out.println("Clicked the get classes button");
@@ -275,11 +235,12 @@ public class FitnessHutBookingGUI extends javax.swing.JFrame {
         
         Date today = new Date();    
         Date tomorrow = new Date(today.getTime() + (1000 * 60 * 60 * 24));
-        
+        String phpCookie = "";
         
         System.out.println("Trying to login");
         try {
-            if ( loginHUT(user, pass) == false){
+            phpCookie = this.instanceOfFitnessHutBooking.loginHUT(user, pass);
+            if ( phpCookie == "AuthFailed" || phpCookie == "" ){
                 JOptionPane.showMessageDialog(null, "Login Falhou");
                 return;
             }
@@ -288,7 +249,7 @@ public class FitnessHutBookingGUI extends javax.swing.JFrame {
         }
         
         try {
-            if ( getClassesHUT(odivelasHUT , today , todayClasses ) == false ){
+            if ( this.instanceOfFitnessHutBooking.getClassesHUT(phpCookie, this.instanceOfFitnessHutBooking.odivelasHUT , today , this.instanceOfFitnessHutBooking.todayClasses ) == false ){
                 JOptionPane.showMessageDialog(null, "Nao existe cookie");
                 return;
             }
@@ -297,7 +258,7 @@ public class FitnessHutBookingGUI extends javax.swing.JFrame {
         }
         
         try {
-            if ( getClassesHUT(odivelasHUT , tomorrow , tomorrowClasses ) == false ){
+            if ( this.instanceOfFitnessHutBooking.getClassesHUT(phpCookie, this.instanceOfFitnessHutBooking.odivelasHUT , tomorrow , this.instanceOfFitnessHutBooking.tomorrowClasses ) == false ){
                 JOptionPane.showMessageDialog(null, "Nao existe cookie");
                 return;
             }
@@ -309,331 +270,65 @@ public class FitnessHutBookingGUI extends javax.swing.JFrame {
         ((javax.swing.table.AbstractTableModel) this.jTable2_tomorrow.getModel()).fireTableDataChanged();
     }//GEN-LAST:event_jButton2_GetClassesMouseClicked
 
-    public boolean loginHUT(String user, String pass) throws Exception{
-        return this.sendPost(loginURL, "email=" + user + "&password=" + pass );
-
-    }
-    
-    private boolean getClassAvailabilityHUT(String classId) throws Exception{
-        if ("".equals(phpCookie)) return false;
-        //return this.sendGet(getClassURL + classId);
-        String url = getClassAvailabilityURL + classId;
-
-        URL obj = new URL(url);
-        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-
-            // optional default is GET
-            con.setRequestMethod("GET");
-
-            //add request header
-            con.setRequestProperty("User-Agent", USER_AGENT);
-            con.setRequestProperty("Cookie", phpCookie);
-
-            int responseCode = con.getResponseCode();
-            System.out.println("\nSending 'GET' request to URL : " + url);
-            System.out.println("Response Code : " + responseCode);
-
-            BufferedReader in = new BufferedReader( new InputStreamReader(con.getInputStream()) );
-            String inputLine;
-            StringBuffer response = new StringBuffer();
-
-            while ((inputLine = in.readLine()) != null) {
-                    response.append(inputLine);
-            }
-            in.close();
-
-            //Aula pode estar em 3 estados
-            // Disponivel - mas ainda nao é possivel reservar
-            // Disponivel - possivel reservar
-            // Indisponivel e/ou esgotada
-
-            String data = response.toString();
-            boolean isClassSoldOut = data.contains("Esgotado");
-            boolean isClassAvailable = data.contains("Disponível");
-            boolean isClassBookable = data.contains("bookAula");
-
-            System.out.println(isClassSoldOut);
-            System.out.println(isClassAvailable);
-            System.out.println(isClassBookable);
-            System.out.println(response.toString());
-
-            return (isClassAvailable & isClassBookable);
-            //print result
-            //System.out.println(response.toString());
-    }
-
-    private boolean getClassesHUT(String fitnessHutLocationId, Date day, Vector<Vector> data) throws Exception{
-        if ("".equals(phpCookie)) return false;
-        
-  
-        
-        if ( data != null ) {data.clear();}
-
-        DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-        String url = getClassesURL + fitnessHutLocationId + "&date=" + df.format(day);
-        
-        URL obj = new URL(url);
-        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-
-            // optional default is GET
-            con.setRequestMethod("GET");
-
-            //add request header
-            con.setRequestProperty("User-Agent", USER_AGENT);
-            con.setRequestProperty("Cookie", phpCookie);
-
-            int responseCode = con.getResponseCode();
-            System.out.println("\nSending 'GET' request to URL : " + url);
-            System.out.println("Response Code : " + responseCode);
-
-            BufferedReader in = new BufferedReader( new InputStreamReader(con.getInputStream()) );
-            String inputLine;
-            StringBuffer response = new StringBuffer();
-
-            while ((inputLine = in.readLine()) != null) {
-                    response.append(inputLine);
-            }
-            in.close();
-
-            System.out.println(response.toString());
-
-            Document doc = Jsoup.parse(response.toString());
+    private void jToggleButton1StartClassBookingItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_jToggleButton1StartClassBookingItemStateChanged
+        if(evt.getStateChange() == java.awt.event.ItemEvent.SELECTED){
             
-            //Element classList = doc.getElementById("aulas-list");
-            Elements links = doc.getElementsByTag("li");
-            
-            for (Element link : links) {
-                Element e = link.child(0);
-                String classId = e.attr("onclick");
-                classId = classId.substring( classId.indexOf("(") + 1 , classId.lastIndexOf(")"));
-                String classTime = e.child(0).child(0).text();
-                String classInfo = e.child(1).child(0).text();
-                String classDurationLocation = e.child(1).child(1).text();
-                String classDuration = classDurationLocation.substring( 0 , classDurationLocation.indexOf(",") );
-                String classLocation = classDurationLocation.substring( classDurationLocation.indexOf(",") + 1 );
+            for (int i = 0; i < this.jTable1_today.getRowCount(); ++i){
+                Boolean classBookFlag = (Boolean) this.jTable1_today.getValueAt( i, this.jTable1_today.getColumnCount() - 1 );
 
+                if ( classBookFlag ){
+                    // {"ClassId","Time","Name","Duration","Location","Book?"};
 
-                DateFormat datef = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-                Date dia = datef.parse( df.format(day) + " " + classTime );
-                 
-                
-                Vector row = new Vector();
-                row.add(classId);
-                //row.add(classSchedule);
-                row.add(dia);
-                row.add(classInfo);
-                row.add(classDuration);
-                row.add(classLocation);
-                row.add(new Boolean(false));
-                data.add(row);
+                    String classId = (String) this.instanceOfFitnessHutBooking.todayClasses.get(i).get(0); //classId
+                    Date classDate = (Date) this.instanceOfFitnessHutBooking.todayClasses.get(i).get(1); // Date and time of the class
+                    final String classIdCopy = classId;
+                    final Date classDateCopy = classDate;
 
-            }
+                    Thread t1 = new Thread(new Runnable() {
+                        public void run(){
+                            try {
+                                FitnessHutBooking.bookClassThreadHut(classIdCopy, classDateCopy);
+                            } catch (Exception ex) {
+                                Logger.getLogger(FitnessHutBookingGUI.class.getName()).log(Level.SEVERE, null, ex);
+                            }
+                        }});
 
-            return true;
-    }
-
-    private boolean bookClassHUT(String classId, String userId, String data) throws Exception{
-        if ("".equals(phpCookie)) return false;
-        
-        DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-        String url = bookClassURL ;
-        String urlParameters = "date=" + df.format(data) + "&aula=" + classId + "&socio=" + userId + "&op=book-aula" ;
-                
-                
-        URL obj = new URL(url);
-        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-
-        //add reuqest header
-        con.setRequestMethod("POST");
-        con.setRequestProperty("User-Agent", USER_AGENT);
-        con.setRequestProperty("Accept-Language", "en-US,en;q=0.5");
-        con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-
-        // Send post request
-        con.setDoOutput(true);
-        DataOutputStream wr = new DataOutputStream(con.getOutputStream());
-        wr.writeBytes(urlParameters);
-        wr.flush();
-        wr.close();
-
-        int responseCode = con.getResponseCode();
-        System.out.println("\nSending 'POST' request to URL : " + url);
-        System.out.println("Post parameters : " + urlParameters);
-        System.out.println("Response Code : " + responseCode);
-
-        if (con.getResponseCode() == HttpURLConnection.HTTP_OK){
-            Object o = con.getContent();
-            System.out.println("Content-Type: " + con.getContentType());
-        }
-
-        BufferedReader in = new BufferedReader(
-                new InputStreamReader(con.getInputStream()));
-        String inputLine;
-        StringBuffer response = new StringBuffer();
-
-        while ((inputLine = in.readLine()) != null) {
-                response.append(inputLine);
-        }
-        in.close();
-      
-        if ( "  1".equals(response.toString()) ) {
-                    System.out.println("Aula marcada com sucesso");
-                    return true;
-        }
-
-        return false;
-        
-        
-     /*   
-        resultados
-            1 aulareservada
-            -1 Não é possível reservar mais aulas! Máximo 2 aulas por dia.
-            -2 Não pode reservar aulas! Não tem acesso a marcação de aulas.
-            -3 Não pode reservar a aula! Aula Esgotada.
-            nada nao sei
-*/
-        
-        
-/*
-//Book Aula
-function bookAula(aula, socio) {
-	var op = "book-aula";
-	var data = data;
-	var aula = aula;
-	var socio = socio;
-	
-	$.post("../includes/myhut.php", { 
-		data: data,
-		aula: aula,
-		socio: socio,
-		op: op
-		}, 
-			
-	function(data) {
-		if(data == 1) {
-			$.mobile.changePage( "info.php?op=3", { role: "dialog" });	
-			loadAulasReservadas();
-		}
-		else if(data == -1)
-			$.mobile.changePage( "info.php?op=4", { role: "dialog" });
-		else if(data == -2)
-			$.mobile.changePage( "info.php?op=11", { role: "dialog" });
-		else if(data == -3)
-			$.mobile.changePage( "info.php?op=10", { role: "dialog" });
-		else
-			$.mobile.changePage( "info.php?op=5&i="+escape(data), { role: "dialog" });
-	});
-			
-	return false;
-}
-*/
-
-    }   
-    
-    
-    // HTTP POST request
-    private boolean sendPost(String url, String urlParameters) throws Exception {
-
-            Boolean isAuthOK = false;
-            URL obj = new URL(url);
-            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-
-            //add reuqest header
-            con.setRequestMethod("POST");
-            con.setRequestProperty("User-Agent", USER_AGENT);
-            con.setRequestProperty("Accept-Language", "en-US,en;q=0.5");
-            con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-
-            // Send post request
-            con.setDoOutput(true);
-            DataOutputStream wr = new DataOutputStream(con.getOutputStream());
-            wr.writeBytes(urlParameters);
-            wr.flush();
-            wr.close();
-
-            int responseCode = con.getResponseCode();
-            System.out.println("\nSending 'POST' request to URL : " + url);
-            System.out.println("Post parameters : " + urlParameters);
-            System.out.println("Response Code : " + responseCode);
-
-            if (con.getResponseCode() == HttpURLConnection.HTTP_OK){
-                Object o = con.getContent();
-                System.out.println("Content-Type: " + con.getContentType());
-            }
-
-            BufferedReader in = new BufferedReader(
-                    new InputStreamReader(con.getInputStream()));
-            String inputLine;
-            StringBuffer response = new StringBuffer();
-
-            while ((inputLine = in.readLine()) != null) {
-                    response.append(inputLine);
-            }
-            in.close();
-
-            if ( "  -1".equals(response.toString()) ) {
-                System.out.println("Failed Auth");
-            } else if ( "  -2".equals(response.toString()) ) {
-
-                System.out.println("Failed Auth");
-            } else{
-                System.out.println("Auth OK");
-                phpCookie = con.getHeaderField("Set-Cookie");
-                isAuthOK = true;
-            }
-            //print result
-            System.out.println(response.toString());
-            System.out.println(phpCookie);
-
-            return isAuthOK;
-
-    }
-    
-    
-    
-    
-    
-    
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
+                    classBookingThreads.add(t1);
+                    t1.start();
+                    //JOptionPane.showMessageDialog(null, "Class: " + classId + "\n\rThread: " + t1.getId()); 
+                    System.out.println("Class: " + classId + " Thread: " + t1.getId());
                 }
-            }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(FitnessHutBookingGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(FitnessHutBookingGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(FitnessHutBookingGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(FitnessHutBookingGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        //</editor-fold>
 
-        
-        
-        
-        /* Create and display the form */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                new FitnessHutBookingGUI().setVisible(true);
             }
-        });
-    }
+            
+            jToggleButton1StartClassBooking.setText("Stop Class Booking");
+            //jTabbedPane1.setEnabled(false);
+            jTable1_today.setEnabled(false);
+            jTable2_tomorrow.setEnabled(false);      
+            jTextField_username.setEnabled(false);
+            jTextField3_password.setEnabled(false);
+            jButton2_GetClasses.setEnabled(false);
+        }
+        else{
+            // Kill existing class booking threads
+            for (Thread t : classBookingThreads){
+                //JOptionPane.showMessageDialog(null, "Interrupting thread: " + t.getId());
+                System.out.println("Interrupting thread: " + t.getId());
+                t.interrupt();
+            }
+            
+            jToggleButton1StartClassBooking.setText("Start Class Booking");
+            //jTabbedPane1.setEnabled(true);
+            jTable1_today.setEnabled(true);
+            jTable2_tomorrow.setEnabled(true);
+            jTextField_username.setEnabled(true);
+            jTextField3_password.setEnabled(true);
+            jButton2_GetClasses.setEnabled(true);
+        }
+    }//GEN-LAST:event_jToggleButton1StartClassBookingItemStateChanged
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton jButton1_Start;
     private javax.swing.JButton jButton2_GetClasses;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
@@ -646,5 +341,6 @@ function bookAula(aula, socio) {
     private javax.swing.JTable jTable2_tomorrow;
     private javax.swing.JTextField jTextField3_password;
     private javax.swing.JTextField jTextField_username;
+    private javax.swing.JToggleButton jToggleButton1StartClassBooking;
     // End of variables declaration//GEN-END:variables
 }

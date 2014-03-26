@@ -111,8 +111,9 @@ public class FitnessHutBooking {
         return loginResult;
     }
     
-    public static boolean getClassAvailabilityHUT(String phpCookie, String classId) throws Exception{
+    public static String getClassAvailabilityHUT(String phpCookie, String classId) throws Exception{
 
+        String userId = "Unavailable" ;
         //return this.sendGet(getClassURL + classId);
         String url = getClassAvailabilityURL + classId;
 
@@ -148,30 +149,29 @@ public class FitnessHutBooking {
             boolean isClassSoldOut = data.contains("Esgotado");
             boolean isClassAvailable = data.contains("Disponível");
             boolean isClassBookable = data.contains("bookAula");
-            
-            Document doc = Jsoup.parse(response.toString());
-            Element e = doc.getElementById("b-book" + classId);
-            
-            String userId = e.attr("onclick");
-            userId = userId.substring( classId.indexOf(",") + 1 , classId.lastIndexOf(")"));
-            
 
-            
-            System.out.println(isClassSoldOut);
-            System.out.println(isClassAvailable);
-            System.out.println(isClassBookable);
+            System.out.println("isClassSoldOut: " + isClassSoldOut);
+            System.out.println("isClassAvailable: " + isClassAvailable);
+            System.out.println("isClassBookable: " + isClassBookable);
             System.out.println(userId);
             
             System.out.println(response.toString());
             
+            /*
             JOptionPane.showMessageDialog(null, "Class: " + classId + " is:\n\r" + 
                                                 "Available: " + isClassAvailable +
                                                 "\n\rSold Out: " + isClassSoldOut +
                                                 "\n\rBookablee: " + isClassBookable);
+            */
+            if (isClassAvailable & isClassBookable){
+                Document doc = Jsoup.parse(response.toString());
+                Element e = doc.getElementById("b-book" + classId);
+                userId = e.attr("onclick");
+                userId = userId.substring( userId.indexOf(",") + 1 , userId.lastIndexOf(")"));
+            }
             
-            return (isClassAvailable & isClassBookable);
-            //print result
-            //System.out.println(response.toString());
+            return userId;
+            
     }
 
     public boolean getClassesHUT(String phpCookie, String fitnessHutLocationId, Date day, Vector<Vector> data) throws Exception{
@@ -342,8 +342,8 @@ function bookAula(aula, socio) {
 
     }   
      
-    public static void bookClassThreadHut(String classId, Date classDate) throws Exception {
-        System.out.println("My Static Method");
+    public static void bookClassThreadHut(String user, String pass, String classId, Date classDate) throws Exception {
+        System.out.println("Starting a new booking thread");
         
         // 1 - waits until time to book class
         // 2 - starts checking for class availability
@@ -355,28 +355,73 @@ function bookAula(aula, socio) {
         Date currentDate = new Date();
         long secsToWait = maxWaitTime; //604800 is 7 days
         long timeDiff = 0;
-        /*            
-        timeDiff = ( classDate.getTime() - currentDate.getTime() ) / 1000 - this.instanceOfFitnessHutBooking.bookClassPeriod;
-        if (timeDiff > 0 && timeDiff < secsToWait ){
-            secsToWait = timeDiff;
+        String phpCookie = "";
+        String userId = "";
+        
+        timeDiff = ( classDate.getTime() - currentDate.getTime() ) / 1000;
+        if ( timeDiff < 0 ){
+            System.out.println("This class already started and cannot be booked");
+            return;
         }
-
-        if ( secsToWait == this.instanceOfFitnessHutBooking.maxWaitTime){
-            System.out.println("No classes to book");
-            return; //no classes to book
+        else if( timeDiff < bookClassPeriod){
+            System.out.println("Less than 10 hours until class, trying to book immediatly");
         }
-
+        else if( timeDiff < maxWaitTime ){
+            System.out.println("More that 10 hours before class, going to sleep " + (timeDiff - bookClassPeriod - beforeWaitTime) + " seconds");
+            if ( timeDiff > beforeWaitTime){
+                try {
+                    Thread.sleep( (timeDiff - bookClassPeriod - beforeWaitTime) * 1000);
+                } catch(InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+            }
+        }
+        else{
+            System.out.println("Not possible to book, more that 7 days until class");
+            return;
+        }
+            
+         
 
         try {
-            //JOptionPane.showMessageDialog(null, "Booking class: " + classId + " at " + dia);
+            phpCookie = loginHUT(user, pass);
 
-            this.instanceOfFitnessHutBooking.getClassAvailabilityHUT(classId);
+            if (phpCookie != "AuthFailed"){
+                
+                do{    
+                    
+                    try {
+                        Thread.sleep(5000);
+                    } catch(InterruptedException ex) {
+                        Thread.currentThread().interrupt();
+                        return;
+                    }
+                    
+                    userId = getClassAvailabilityHUT(phpCookie, classId);
+                    currentDate = new Date();
+                    timeDiff = ( classDate.getTime() - currentDate.getTime() ) / 1000;
+                    
+                }
+                while (userId == "Unavailable" && timeDiff > 0);
+                
+                if( userId != "Unavailable" ){
+                    if ( bookClassHUT(phpCookie, classId, userId, classDate) ){
+                        JOptionPane.showMessageDialog(null, "Class: " + classId + " has been booked successfully!" );
+                    }
+                    else{
+                        JOptionPane.showMessageDialog(null, "Class: " + classId + " could not be booked!" );
+                    }
+                }
+                
+            }
+            
 
 
         } catch (Exception ex) {
             Logger.getLogger(FitnessHutBookingGUI.class.getName()).log(Level.SEVERE, null, ex);
         }
-        */
+        System.out.println("Ending a booking thread");
     }
     
     

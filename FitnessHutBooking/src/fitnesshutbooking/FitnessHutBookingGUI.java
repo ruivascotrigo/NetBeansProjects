@@ -88,7 +88,7 @@ class MyTableModel extends AbstractTableModel {
 
 class DateRenderer extends DefaultTableCellRenderer {
 
-    private SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
+    private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 
     @Override
     public void setValue(Object value) {
@@ -271,6 +271,9 @@ public class FitnessHutBookingGUI extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton2_GetClassesMouseClicked
 
     private void jToggleButton1StartClassBookingItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_jToggleButton1StartClassBookingItemStateChanged
+        String user = this.jTextField_username.getText();
+        String pass = this.jTextField3_password.getText();
+        
         if(evt.getStateChange() == java.awt.event.ItemEvent.SELECTED){
             
             for (int i = 0; i < this.jTable1_today.getRowCount(); ++i){
@@ -283,11 +286,43 @@ public class FitnessHutBookingGUI extends javax.swing.JFrame {
                     Date classDate = (Date) this.instanceOfFitnessHutBooking.todayClasses.get(i).get(1); // Date and time of the class
                     final String classIdCopy = classId;
                     final Date classDateCopy = classDate;
+                    final String userCopy = user;
+                    final String passCopy = pass;
 
                     Thread t1 = new Thread(new Runnable() {
                         public void run(){
                             try {
-                                FitnessHutBooking.bookClassThreadHut(classIdCopy, classDateCopy);
+                                FitnessHutBooking.bookClassThreadHut(userCopy, passCopy, classIdCopy, classDateCopy);
+                            } catch (Exception ex) {
+                                Logger.getLogger(FitnessHutBookingGUI.class.getName()).log(Level.SEVERE, null, ex);
+                            }
+                        }});
+
+                    classBookingThreads.add(t1);
+                    t1.start();
+                    //JOptionPane.showMessageDialog(null, "Class: " + classId + "\n\rThread: " + t1.getId()); 
+                    System.out.println("Class: " + classId + " Thread: " + t1.getId());
+                }
+
+            }
+            
+            for (int i = 0; i < this.jTable2_tomorrow.getRowCount(); ++i){
+                Boolean classBookFlag = (Boolean) this.jTable2_tomorrow.getValueAt( i, this.jTable2_tomorrow.getColumnCount() - 1 );
+
+                if ( classBookFlag ){
+                    // {"ClassId","Time","Name","Duration","Location","Book?"};
+
+                    String classId = (String) this.instanceOfFitnessHutBooking.tomorrowClasses.get(i).get(0); //classId
+                    Date classDate = (Date) this.instanceOfFitnessHutBooking.tomorrowClasses.get(i).get(1); // Date and time of the class
+                    final String classIdCopy = classId;
+                    final Date classDateCopy = classDate;
+                    final String userCopy = user;
+                    final String passCopy = pass;
+
+                    Thread t1 = new Thread(new Runnable() {
+                        public void run(){
+                            try {
+                                FitnessHutBooking.bookClassThreadHut(userCopy, passCopy, classIdCopy, classDateCopy);
                             } catch (Exception ex) {
                                 Logger.getLogger(FitnessHutBookingGUI.class.getName()).log(Level.SEVERE, null, ex);
                             }
@@ -316,7 +351,8 @@ public class FitnessHutBookingGUI extends javax.swing.JFrame {
                 System.out.println("Interrupting thread: " + t.getId());
                 t.interrupt();
             }
-            
+            classBookingThreads.clear();
+                    
             jToggleButton1StartClassBooking.setText("Start Class Booking");
             //jTabbedPane1.setEnabled(true);
             jTable1_today.setEnabled(true);

@@ -10,10 +10,12 @@ import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.InetAddress;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Properties;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -22,6 +24,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import javax.mail.*;
+import javax.mail.internet.*;
 
 /**
  *
@@ -34,6 +38,7 @@ public class FitnessHutBooking {
     private static final String bookClassURL = "http://m.fitnesshut.pt/includes/myhut.php"; //POST
     private static final String getClassAvailabilityURL = "http://m.fitnesshut.pt/pages/aula.php?id="; //GET
     private static final String getClassesURL = "http://m.fitnesshut.pt/pages/get-aulas.php?id="; //GET
+    
     //GET http://m.fitnesshut.pt/pages/get-aulas.php?id=5&date=2014-03-20 HTTP/1.1
     // Buscar aulas de Odivelas do proprio dia http://m.fitnesshut.pt/pages/aulas.php?id=5 //GET
     // Buscar aulas de Odivelas do dia especificado http://m.fitnesshut.pt/pages/get-aulas.php?id=5&date=2014-03-20
@@ -44,13 +49,26 @@ public class FitnessHutBooking {
     
     public static final String odivelasHUT = "5";
     
+    private static String USER_NAME = "*****";  // GMail user name (just the part before "@gmail.com")
+    private static String PASSWORD = "********"; // GMail password
+    private static String RECIPIENT = "lizard.bill@myschool.edu";
+
+    /* INSERT THE BELOW CODE FOR EMAIL SENDING
+    String from = USER_NAME;
+    String pass = PASSWORD;
+    String[] to = { RECIPIENT }; // list of recipient email addresses
+    String subject = "Java send mail example";
+    String body = "Welcome to JavaMail!";
+
+    sendFromGMail(from, pass, to, subject, body);
+    */
+    
+    
     public Vector<Vector> todayClasses = new Vector<Vector>();
     public Vector<Vector> tomorrowClasses = new Vector<Vector>();
     
     //private String phpCookie = "";
     private String userId = "";
-    
-    
     
     
     public static String loginHUT(String user, String pass) throws Exception{
@@ -61,6 +79,17 @@ public class FitnessHutBooking {
         String urlParameters = "email=" + user + "&password=" + pass;
         
         URL obj = new URL(url);
+        String host = obj.getHost();
+        try {
+            InetAddress address = InetAddress.getByName(host);
+        } catch (Exception ex) {
+            //JOptionPane.showMessageDialog(null, "O teu PC é uma bosta que nem consegue resolver um nome dns, compra apple que é bom!" );
+            return loginResult;
+        }
+        InetAddress address = InetAddress.getByName(host);
+        
+        String ip = address.getHostAddress();
+        //JOptionPane.showMessageDialog(null, "The dns name " + host + " was resolved to the IP address " + ip );
         HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 
         //add reuqest header
@@ -83,7 +112,7 @@ public class FitnessHutBooking {
 
         if (con.getResponseCode() == HttpURLConnection.HTTP_OK){
             Object o = con.getContent();
-            System.out.println("Content-Type: " + con.getContentType());
+            //System.out.println("Content-Type: " + con.getContentType());
         }
 
         BufferedReader in = new BufferedReader(
@@ -105,7 +134,7 @@ public class FitnessHutBooking {
             loginResult = con.getHeaderField("Set-Cookie");
         }
         //print result
-        System.out.println(response.toString());
+        //System.out.println(response.toString());
         System.out.println(loginResult);
 
         return loginResult;
@@ -155,7 +184,7 @@ public class FitnessHutBooking {
             System.out.println("isClassBookable: " + isClassBookable);
             System.out.println(userId);
             
-            System.out.println(response.toString());
+            //System.out.println(response.toString());
             
             /*
             JOptionPane.showMessageDialog(null, "Class: " + classId + " is:\n\r" + 
@@ -206,7 +235,7 @@ public class FitnessHutBooking {
             }
             in.close();
 
-            System.out.println(response.toString());
+            //System.out.println(response.toString());
 
             Document doc = Jsoup.parse(response.toString());
             
@@ -292,7 +321,7 @@ public class FitnessHutBooking {
                     System.out.println("Aula marcada com sucesso");
                     return true;
         }
-
+        System.out.println("Nao foi possivel marcar a aula, codigo de erro: " + response.toString());
         return false;
         
         
@@ -353,24 +382,32 @@ function bookAula(aula, socio) {
         // bookClassHUT(String classId, String userId, Date classDate);
         
         Date currentDate = new Date();
-        long secsToWait = maxWaitTime; //604800 is 7 days
+        long timeSleep = 0;
         long timeDiff = 0;
         String phpCookie = "";
         String userId = "";
         
         timeDiff = ( classDate.getTime() - currentDate.getTime() ) / 1000;
+        
+        Date tempDate = new Date(timeDiff*1000);
+        
         if ( timeDiff < 0 ){
             System.out.println("This class already started and cannot be booked");
+            JOptionPane.showMessageDialog(null, "The class: " + classId + " already started and cannot be booked" );
             return;
         }
         else if( timeDiff < bookClassPeriod){
             System.out.println("Less than 10 hours until class, trying to book immediatly");
+            JOptionPane.showMessageDialog(null, "The class: " + classId + " is in less than 10 hours , trying to book immediatly" );
         }
         else if( timeDiff < maxWaitTime ){
-            System.out.println("More that 10 hours before class, going to sleep " + (timeDiff - bookClassPeriod - beforeWaitTime) + " seconds");
+            timeSleep = (timeDiff - bookClassPeriod - beforeWaitTime) ;
+            System.out.println("More that 10 hours before class, going to sleep for " + timeSleep + " seconds");
+            JOptionPane.showMessageDialog(null, "The class: " + classId + " is in more than 10 hours, going to sleep for " + timeSleep + " seconds");
+            
             if ( timeDiff > beforeWaitTime){
                 try {
-                    Thread.sleep( (timeDiff - bookClassPeriod - beforeWaitTime) * 1000);
+                    Thread.sleep( timeSleep * 1000);
                 } catch(InterruptedException ex) {
                     Thread.currentThread().interrupt();
                     return;
@@ -379,6 +416,7 @@ function bookAula(aula, socio) {
         }
         else{
             System.out.println("Not possible to book, more that 7 days until class");
+            JOptionPane.showMessageDialog(null, "The class: " + classId + " is more that 7 days ahead, not possible to book,");
             return;
         }
             
@@ -415,7 +453,9 @@ function bookAula(aula, socio) {
                 }
                 
             }
-            
+            else{
+                JOptionPane.showMessageDialog(null, "Authentication failed during the class booking process!" );
+            }
 
 
         } catch (Exception ex) {
@@ -424,7 +464,47 @@ function bookAula(aula, socio) {
         System.out.println("Ending a booking thread");
     }
     
-    
+    private static void sendFromGMail(String from, String pass, String[] to, String subject, String body) {
+        Properties props = System.getProperties();
+        String host = "smtp.gmail.com";
+        props.put("mail.smtp.starttls.enable", "true");
+        props.put("mail.smtp.host", host);
+        props.put("mail.smtp.user", from);
+        props.put("mail.smtp.password", pass);
+        props.put("mail.smtp.port", "587");
+        props.put("mail.smtp.auth", "true");
+
+        Session session = Session.getDefaultInstance(props);
+        MimeMessage message = new MimeMessage(session);
+
+        try {
+            message.setFrom(new InternetAddress(from));
+            InternetAddress[] toAddress = new InternetAddress[to.length];
+
+            // To get the array of addresses
+            for( int i = 0; i < to.length; i++ ) {
+                toAddress[i] = new InternetAddress(to[i]);
+            }
+
+            for( int i = 0; i < toAddress.length; i++) {
+                message.addRecipient(Message.RecipientType.TO, toAddress[i]);
+            }
+
+            message.setSubject(subject);
+            message.setText(body);
+            Transport transport = session.getTransport("smtp");
+            transport.connect(host, from, pass);
+            transport.sendMessage(message, message.getAllRecipients());
+            transport.close();
+        }
+        catch (AddressException ae) {
+            ae.printStackTrace();
+        }
+        catch (MessagingException me) {
+            me.printStackTrace();
+        }
+    }
+
     
 }
     

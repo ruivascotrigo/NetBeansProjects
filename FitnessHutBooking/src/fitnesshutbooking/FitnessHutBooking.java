@@ -34,10 +34,18 @@ import javax.mail.internet.*;
 public class FitnessHutBooking {
    
     private static final String USER_AGENT = "Mozilla/5.0";
-    private static final String loginURL = "http://m.fitnesshut.pt/includes/login.php"; //POST
-    private static final String bookClassURL = "http://m.fitnesshut.pt/includes/myhut.php"; //POST
-    private static final String getClassAvailabilityURL = "http://m.fitnesshut.pt/pages/aula.php?id="; //GET
-    private static final String getClassesURL = "http://m.fitnesshut.pt/pages/get-aulas.php?id="; //GET
+    
+    //private static final String loginURL = "http://m.fitnesshut.pt/includes/login.php"; //POST
+    private static final String loginURL = "http://www.fitnesshut.pt/myhut/login.php"; //POST
+    
+    //private static final String bookClassURL = "http://m.fitnesshut.pt/includes/myhut.php"; //POST
+    private static final String bookClassURL = "http://www.fitnesshut.pt/myhut/pages/myhut.php"; //POST
+    
+    //private static final String getClassAvailabilityURL = "http://m.fitnesshut.pt/pages/aula.php?id="; //GET
+    private static final String getClassAvailabilityURL = "http://www.fitnesshut.pt/myhut/pages/get-aula.php?id="; //GET
+    
+    //private static final String getClassesURL = "http://m.fitnesshut.pt/pages/get-aulas.php?id="; //GET
+    private static final String getClassesURL = "http://www.fitnesshut.pt/myhut/pages/clube-aulas.php?id="; //GET
     
     //GET http://m.fitnesshut.pt/pages/get-aulas.php?id=5&date=2014-03-20 HTTP/1.1
     // Buscar aulas de Odivelas do proprio dia http://m.fitnesshut.pt/pages/aulas.php?id=5 //GET
@@ -47,8 +55,14 @@ public class FitnessHutBooking {
     public static final long beforeWaitTime = 60; //60 is in secs
     public static final long bookClassPeriod = 36000; //36000 seconds is 10 hours
     
+    public static final String amoreirasHUT = "1";
+    public static final String cascaisHUT = "2";
+    public static final String trindadeHUT = "3";
+    public static final String arcodocegoHUT = "4";
     public static final String odivelasHUT = "5";
-    
+    public static final String bragaHUT = "6";
+    public static final String picoasHUT = "7";
+        
     private static String USER_NAME = "*****";  // GMail user name (just the part before "@gmail.com")
     private static String PASSWORD = "********"; // GMail password
     private static String RECIPIENT = "lizard.bill@myschool.edu";
@@ -76,7 +90,9 @@ public class FitnessHutBooking {
         String loginResult = "AuthFailed";
         
         String url = loginURL;
-        String urlParameters = "email=" + user + "&password=" + pass;
+        
+        //String urlParameters = "email=" + user + "&password=" + pass;
+        String urlParameters = "myhutemail=" + user + "&myhutpassword=" + pass;
         
         URL obj = new URL(url);
         String host = obj.getHost();
@@ -175,8 +191,12 @@ public class FitnessHutBooking {
             // Indisponivel e/ou esgotada
 
             String data = response.toString();
-            boolean isClassSoldOut = data.contains("Esgotado");
-            boolean isClassAvailable = data.contains("Disponível");
+            //boolean isClassSoldOut = data.contains("Esgotado");
+            boolean isClassSoldOut = data.contains("esgotado");
+            
+            //boolean isClassAvailable = data.contains("Disponível");
+            boolean isClassAvailable = data.contains("disponivel");
+            
             boolean isClassBookable = data.contains("bookAula");
 
             System.out.println("isClassSoldOut: " + isClassSoldOut);
@@ -235,11 +255,44 @@ public class FitnessHutBooking {
             }
             in.close();
 
-            //System.out.println(response.toString());
+            System.out.println(response.toString());
 
             Document doc = Jsoup.parse(response.toString());
             
             //Element classList = doc.getElementById("aulas-list");
+            Elements links = doc.getElementsByClass("aulas-content-menu-aula");
+            
+            for (Element link : links) {
+                String classId = link.attr("onclick");
+                String classInfo = classId.substring( classId.indexOf("\"") + 1 , classId.lastIndexOf("\""));
+                classId = classId.substring( classId.indexOf("(") + 1 , classId.lastIndexOf(","));
+                 
+                Element e = link.child(0);
+
+                String classTimeDuration = e.childNode(0).toString();
+                String classTime = classTimeDuration.substring( 0 , classTimeDuration.indexOf("/") - 1 );
+                String classDuration = classTimeDuration.substring( classTimeDuration.indexOf("/") + 2 );
+                String classLocation = e.childNode(2).toString();
+
+                DateFormat datef = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+                Date dia = datef.parse( df.format(day) + " " + classTime );
+                 
+                
+                Vector row = new Vector();
+                row.add(classId);
+                //row.add(classSchedule);
+                row.add(dia);
+                row.add(classInfo);
+                row.add(classDuration);
+                row.add(classLocation);
+                row.add(new Boolean(false));
+                data.add(row);
+
+            }       
+            
+ 
+            /*
+            
             Elements links = doc.getElementsByTag("li");
             
             for (Element link : links) {
@@ -268,7 +321,7 @@ public class FitnessHutBooking {
                 data.add(row);
 
             }
-
+            */
             return true;
     }
 
@@ -277,8 +330,8 @@ public class FitnessHutBooking {
         
         DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
         String url = bookClassURL ;
-        String urlParameters = "data=" + df.format(classDate) + "&aula=" + classId + "&socio=" + userId + "&op=book-aula" ;
-                
+        //String urlParameters = "data=" + df.format(classDate) + "&aula=" + classId + "&socio=" + userId + "&op=book-aula" ;
+        String urlParameters = "aula=" + classId + "&socio=" + userId + "&op=book-aulas" ;        
                 
         URL obj = new URL(url);
         HttpURLConnection con = (HttpURLConnection) obj.openConnection();
@@ -398,7 +451,7 @@ function bookAula(aula, socio) {
         }
         else if( timeDiff < bookClassPeriod){
             System.out.println("Less than 10 hours until class, trying to book immediatly");
-            JOptionPane.showMessageDialog(null, "The class: " + classId + " is in less than 10 hours , trying to book immediatly" );
+            //JOptionPane.showMessageDialog(null, "The class: " + classId + " is in less than 10 hours , trying to book immediatly" );
         }
         else if( timeDiff < maxWaitTime ){
             timeSleep = (timeDiff - bookClassPeriod - beforeWaitTime) ;
@@ -410,6 +463,7 @@ function bookAula(aula, socio) {
                     Thread.sleep( timeSleep * 1000);
                 } catch(InterruptedException ex) {
                     Thread.currentThread().interrupt();
+                    System.out.println("Returning1...");
                     return;
                 }
             }
@@ -433,6 +487,7 @@ function bookAula(aula, socio) {
                         Thread.sleep(5000);
                     } catch(InterruptedException ex) {
                         Thread.currentThread().interrupt();
+                        System.out.println("Returning2...");
                         return;
                     }
                     

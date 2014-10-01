@@ -138,6 +138,7 @@ public class FitnessHutBookingGUI extends javax.swing.JFrame {
         jScrollPane2 = new javax.swing.JScrollPane();
         jTable2_tomorrow = new javax.swing.JTable();
         jToggleButton1StartClassBooking = new javax.swing.JToggleButton();
+        jComboBox1 = new javax.swing.JComboBox();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -154,6 +155,15 @@ public class FitnessHutBookingGUI extends javax.swing.JFrame {
         jLabel3.setText("Username:");
 
         jLabel4.setText("Password:");
+
+        jTextField_username.setText("ruivascotrigo@hotmail.com");
+        jTextField_username.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jTextField_usernameActionPerformed(evt);
+            }
+        });
+
+        jTextField3_password.setText("a#yQeZyMu");
 
         jTable1_today.setModel(new MyTableModel(this.instanceOfFitnessHutBooking.todayClasses));
         jTable1_today.getColumnModel().getColumn(1).setCellRenderer(new DateRenderer());
@@ -174,6 +184,8 @@ public class FitnessHutBookingGUI extends javax.swing.JFrame {
             }
         });
 
+        jComboBox1.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Amoreiras", "Cascais", "Trindade", "Arco do Cego", "Odivelas", "Braga", "Picoas" }));
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -192,12 +204,13 @@ public class FitnessHutBookingGUI extends javax.swing.JFrame {
                         .addComponent(jLabel4)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jTextField3_password, javax.swing.GroupLayout.PREFERRED_SIZE, 95, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED, 89, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                                .addComponent(jComboBox1, 0, 105, Short.MAX_VALUE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                 .addComponent(jButton2_GetClasses))
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                                .addComponent(jToggleButton1StartClassBooking)))))
+                            .addComponent(jToggleButton1StartClassBooking, javax.swing.GroupLayout.Alignment.TRAILING))))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -212,7 +225,8 @@ public class FitnessHutBookingGUI extends javax.swing.JFrame {
                     .addComponent(jLabel4)
                     .addComponent(jTextField_username, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jTextField3_password, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton2_GetClasses))
+                    .addComponent(jButton2_GetClasses)
+                    .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(35, 35, 35)
                 .addComponent(jTabbedPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 412, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
@@ -228,6 +242,7 @@ public class FitnessHutBookingGUI extends javax.swing.JFrame {
         
         String user = this.jTextField_username.getText();
         String pass = this.jTextField3_password.getText();
+        String locationId = Integer.toString( this.jComboBox1.getSelectedIndex() + 1 );
         
         Date today = new Date();    
         Date tomorrow = new Date(today.getTime() + (1000 * 60 * 60 * 24));
@@ -246,7 +261,7 @@ public class FitnessHutBookingGUI extends javax.swing.JFrame {
         }
         
         try {
-            if ( this.instanceOfFitnessHutBooking.getClassesHUT(phpCookie, this.instanceOfFitnessHutBooking.odivelasHUT , today , this.instanceOfFitnessHutBooking.todayClasses ) == false ){
+            if ( this.instanceOfFitnessHutBooking.getClassesHUT(phpCookie, locationId , today , this.instanceOfFitnessHutBooking.todayClasses ) == false ){
                 JOptionPane.showMessageDialog(null, "Nao existe cookie");
                 return;
             }
@@ -255,7 +270,7 @@ public class FitnessHutBookingGUI extends javax.swing.JFrame {
         }
         
         try {
-            if ( this.instanceOfFitnessHutBooking.getClassesHUT(phpCookie, this.instanceOfFitnessHutBooking.odivelasHUT , tomorrow , this.instanceOfFitnessHutBooking.tomorrowClasses ) == false ){
+            if ( this.instanceOfFitnessHutBooking.getClassesHUT(phpCookie, locationId , tomorrow , this.instanceOfFitnessHutBooking.tomorrowClasses ) == false ){
                 JOptionPane.showMessageDialog(null, "Nao existe cookie");
                 return;
             }
@@ -288,11 +303,13 @@ public class FitnessHutBookingGUI extends javax.swing.JFrame {
 
                     Thread t1 = new Thread(new Runnable() {
                         public void run(){
-                            try {
-                                FitnessHutBooking.bookClassThreadHut(userCopy, passCopy, classIdCopy, classDateCopy);
-                            } catch (Exception ex) {
-                                Logger.getLogger(FitnessHutBookingGUI.class.getName()).log(Level.SEVERE, null, ex);
-                            }
+                            //while (true) {
+                                try {
+                                    FitnessHutBooking.bookClassThreadHut(userCopy, passCopy, classIdCopy, classDateCopy);
+                                } catch (Exception ex) {
+                                    Logger.getLogger(FitnessHutBookingGUI.class.getName()).log(Level.SEVERE, null, ex);
+                                }
+                            //}
                         }});
 
                     classBookingThreads.add(t1);
@@ -360,9 +377,14 @@ public class FitnessHutBookingGUI extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_jToggleButton1StartClassBookingItemStateChanged
 
+    private void jTextField_usernameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField_usernameActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField_usernameActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton2_GetClasses;
+    private javax.swing.JComboBox jComboBox1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;

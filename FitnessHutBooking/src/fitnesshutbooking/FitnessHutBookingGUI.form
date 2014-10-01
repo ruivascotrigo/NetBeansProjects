@@ -37,14 +37,14 @@
                       <Component id="jLabel4" min="-2" max="-2" attributes="0"/>
                       <EmptySpace max="-2" attributes="0"/>
                       <Component id="jTextField3_password" min="-2" pref="95" max="-2" attributes="0"/>
-                      <EmptySpace type="unrelated" pref="89" max="32767" attributes="0"/>
+                      <EmptySpace type="unrelated" max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="0" attributes="0">
                           <Group type="102" alignment="1" attributes="0">
+                              <Component id="jComboBox1" pref="105" max="32767" attributes="0"/>
+                              <EmptySpace type="unrelated" max="-2" attributes="0"/>
                               <Component id="jButton2_GetClasses" min="-2" max="-2" attributes="0"/>
                           </Group>
-                          <Group type="102" alignment="1" attributes="0">
-                              <Component id="jToggleButton1StartClassBooking" min="-2" max="-2" attributes="0"/>
-                          </Group>
+                          <Component id="jToggleButton1StartClassBooking" alignment="1" min="-2" max="-2" attributes="0"/>
                       </Group>
                   </Group>
               </Group>
@@ -65,6 +65,7 @@
                   <Component id="jTextField_username" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="jTextField3_password" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="jButton2_GetClasses" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="jComboBox1" alignment="3" min="-2" max="-2" attributes="0"/>
               </Group>
               <EmptySpace min="-2" pref="35" max="-2" attributes="0"/>
               <Component id="jTabbedPane1" pref="412" max="32767" attributes="0"/>
@@ -105,8 +106,17 @@
       </Properties>
     </Component>
     <Component class="javax.swing.JTextField" name="jTextField_username">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="ruivascotrigo@hotmail.com"/>
+      </Properties>
+      <Events>
+        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jTextField_usernameActionPerformed"/>
+      </Events>
     </Component>
     <Component class="javax.swing.JTextField" name="jTextField3_password">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="a#yQeZyMu"/>
+      </Properties>
     </Component>
     <Container class="javax.swing.JTabbedPane" name="jTabbedPane1">
 
@@ -179,6 +189,21 @@
       <Events>
         <EventHandler event="itemStateChanged" listener="java.awt.event.ItemListener" parameters="java.awt.event.ItemEvent" handler="jToggleButton1StartClassBookingItemStateChanged"/>
       </Events>
+    </Component>
+    <Component class="javax.swing.JComboBox" name="jComboBox1">
+      <Properties>
+        <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
+          <StringArray count="7">
+            <StringItem index="0" value="Amoreiras"/>
+            <StringItem index="1" value="Cascais"/>
+            <StringItem index="2" value="Trindade"/>
+            <StringItem index="3" value="Arco do Cego"/>
+            <StringItem index="4" value="Odivelas"/>
+            <StringItem index="5" value="Braga"/>
+            <StringItem index="6" value="Picoas"/>
+          </StringArray>
+        </Property>
+      </Properties>
     </Component>
   </SubComponents>
 </Form>

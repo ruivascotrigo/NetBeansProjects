@@ -492,7 +492,13 @@ function bookAula(aula, socio) {
                         return;
                     }
                     
-                    userId = getClassAvailabilityHUT(phpCookie, classId);
+                    try{
+                        userId = getClassAvailabilityHUT(phpCookie, classId);
+                    } catch (Exception ex) {
+                        // Catch connection exception and continue program execution
+                        System.out.println(ex.getMessage());
+                        System.out.println("Connection issue to FitnessHut server, continuing program execution in 5 seconds");
+                    }
                     currentDate = new Date();
                     timeDiff = ( classDate.getTime() - currentDate.getTime() ) / 1000;
                     

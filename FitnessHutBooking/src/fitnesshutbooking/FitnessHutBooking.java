@@ -37,16 +37,20 @@ public class FitnessHutBooking {
     private static final String USER_AGENT = "Mozilla/5.0";
     
     //private static final String loginURL = "http://m.fitnesshut.pt/includes/login.php"; //POST
-    private static final String loginURL = "http://www.fitnesshut.pt/myhut/login.php"; //POST
+    //private static final String loginURL = "http://www.fitnesshut.pt/myhut/login.php"; //POST
+    private static final String loginURL = "http://www.myhut.pt/myhut/login.php"; //POST
     
     //private static final String bookClassURL = "http://m.fitnesshut.pt/includes/myhut.php"; //POST
-    private static final String bookClassURL = "http://www.fitnesshut.pt/myhut/pages/myhut.php"; //POST
+    //private static final String bookClassURL = "http://www.fitnesshut.pt/myhut/pages/myhut.php"; //POST
+    private static final String bookClassURL = "http://www.myhut.pt/myhut/pages/myhut.php"; //POST
     
     //private static final String getClassAvailabilityURL = "http://m.fitnesshut.pt/pages/aula.php?id="; //GET
-    private static final String getClassAvailabilityURL = "http://www.fitnesshut.pt/myhut/pages/get-aula.php?id="; //GET
+    //private static final String getClassAvailabilityURL = "http://www.fitnesshut.pt/myhut/pages/get-aula.php?id="; //GET
+    private static final String getClassAvailabilityURL = "http://www.myhut.pt/myhut/pages/get-aula.php?id="; //GET
     
     //private static final String getClassesURL = "http://m.fitnesshut.pt/pages/get-aulas.php?id="; //GET
-    private static final String getClassesURL = "http://www.fitnesshut.pt/myhut/pages/clube-aulas.php?id="; //GET
+    //private static final String getClassesURL = "http://www.fitnesshut.pt/myhut/pages/clube-aulas.php?id="; //GET
+    private static final String getClassesURL = "http://www.myhut.pt/myhut/pages/clube-aulas.php?id="; //GET
     
     //GET http://m.fitnesshut.pt/pages/get-aulas.php?id=5&date=2014-03-20 HTTP/1.1
     // Buscar aulas de Odivelas do proprio dia http://m.fitnesshut.pt/pages/aulas.php?id=5 //GET
@@ -63,6 +67,9 @@ public class FitnessHutBooking {
     public static final String odivelasHUT = "5";
     public static final String bragaHUT = "6";
     public static final String picoasHUT = "7";
+    //public static final String louresHUT = "11";
+    //public static final String lindaavelhaHUT = "13";
+    
         
     private static String USER_NAME = "*****";  // GMail user name (just the part before "@gmail.com")
     private static String PASSWORD = "********"; // GMail password
@@ -247,7 +254,7 @@ public class FitnessHutBooking {
             
             if ( responseCode != HttpURLConnection.HTTP_OK) return false;
 
-            BufferedReader in = new BufferedReader( new InputStreamReader(con.getInputStream()) );
+            BufferedReader in = new BufferedReader( new InputStreamReader(con.getInputStream(),"UTF-8") );
             String inputLine;
             StringBuffer response = new StringBuffer();
 
@@ -258,7 +265,7 @@ public class FitnessHutBooking {
 
             System.out.println(response.toString());
 
-            Document doc = Jsoup.parse(response.toString());
+            Document doc = Jsoup.parse(response.toString(),"UTF-8");
             
             //Element classList = doc.getElementById("aulas-list");
             Elements links = doc.getElementsByClass("aulas-content-menu-aula");
@@ -277,7 +284,6 @@ public class FitnessHutBooking {
 
                 DateFormat datef = new SimpleDateFormat("yyyy-MM-dd HH:mm");
                 Date dia = datef.parse( df.format(day) + " " + classTime );
-                 
                 
                 Vector row = new Vector();
                 row.add(classId);

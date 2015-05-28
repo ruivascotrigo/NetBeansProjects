@@ -59,6 +59,20 @@ public class FitnessHutBooking {
     public static final long maxWaitTime = 604800; //604800 seconds is 7 days
     public static final long beforeWaitTime = 60; //60 is in secs
     public static final long bookClassPeriod = 36000; //36000 seconds is 10 hours
+
+    /*
+<option value="1">Amoreiras</option>
+<option value="2">Cascais</option>
+<option value="3">Trindade</option>
+<option value="4">Arco do Cego</option>
+<option value="5">Odivelas</option>
+<option value="6">Braga</option>
+<option value="7">Picoas</option>
+<option value="8">Olivais</option>
+<option value="9">Loures</option>
+<option value="10">Linda a Velha</option>
+<option value="11">Setúbal</option>
+*/
     
     public static final String amoreirasHUT = "1";
     public static final String cascaisHUT = "2";
@@ -67,9 +81,11 @@ public class FitnessHutBooking {
     public static final String odivelasHUT = "5";
     public static final String bragaHUT = "6";
     public static final String picoasHUT = "7";
-    //public static final String louresHUT = "11";
-    //public static final String lindaavelhaHUT = "13";
-    
+    public static final String olivaisHUT = "8";
+    public static final String louresHUT = "9";
+    public static final String lindaavelhaHUT = "10";
+    public static final String setubalHUT = "11";
+  
         
     private static String USER_NAME = "*****";  // GMail user name (just the part before "@gmail.com")
     private static String PASSWORD = "********"; // GMail password
@@ -378,10 +394,10 @@ public class FitnessHutBooking {
         in.close();
       
         if ( "  1".equals(response.toString()) ) {
-                    System.out.println("Aula marcada com sucesso");
+                    System.out.println("Aula marcada com sucesso, código: ->" + response.toString() + "<-");
                     return true;
         }
-        System.out.println("Nao foi possivel marcar a aula, codigo de erro: " + response.toString());
+        System.out.println("Nao foi possivel marcar a aula, codigo de erro: ->" + response.toString() + "<-");
         return false;
         
         

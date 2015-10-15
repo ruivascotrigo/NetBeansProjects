@@ -27,6 +27,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import javax.mail.*;
 import javax.mail.internet.*;
+import org.jsoup.nodes.Node;
+import org.jsoup.nodes.TextNode;
 
 /**
  *
@@ -36,21 +38,13 @@ public class FitnessHutBooking {
    
     private static final String USER_AGENT = "Mozilla/5.0";
     
-    //private static final String loginURL = "http://m.fitnesshut.pt/includes/login.php"; //POST
-    //private static final String loginURL = "http://www.fitnesshut.pt/myhut/login.php"; //POST
-    private static final String loginURL = "http://www.myhut.pt/myhut/login.php"; //POST
+    private static final String loginURL = "https://www.myhut.pt/myhut/functions/login.php"; //POST
     
-    //private static final String bookClassURL = "http://m.fitnesshut.pt/includes/myhut.php"; //POST
-    //private static final String bookClassURL = "http://www.fitnesshut.pt/myhut/pages/myhut.php"; //POST
-    private static final String bookClassURL = "http://www.myhut.pt/myhut/pages/myhut.php"; //POST
+    private static final String bookClassURL = "https://www.myhut.pt/myhut/functions/myhut.php"; //POST
     
-    //private static final String getClassAvailabilityURL = "http://m.fitnesshut.pt/pages/aula.php?id="; //GET
-    //private static final String getClassAvailabilityURL = "http://www.fitnesshut.pt/myhut/pages/get-aula.php?id="; //GET
-    private static final String getClassAvailabilityURL = "http://www.myhut.pt/myhut/pages/get-aula.php?id="; //GET
+    private static final String getClassAvailabilityURL = "https://www.myhut.pt/myhut/functions/get-aula.php?id="; //GET
     
-    //private static final String getClassesURL = "http://m.fitnesshut.pt/pages/get-aulas.php?id="; //GET
-    //private static final String getClassesURL = "http://www.fitnesshut.pt/myhut/pages/clube-aulas.php?id="; //GET
-    private static final String getClassesURL = "http://www.myhut.pt/myhut/pages/clube-aulas.php?id="; //GET
+    private static final String getClassesURL = "https://www.myhut.pt/myhut/functions/get-aulas.php?id="; //GET
     
     //GET http://m.fitnesshut.pt/pages/get-aulas.php?id=5&date=2014-03-20 HTTP/1.1
     // Buscar aulas de Odivelas do proprio dia http://m.fitnesshut.pt/pages/aulas.php?id=5 //GET
@@ -116,7 +110,7 @@ public class FitnessHutBooking {
         String url = loginURL;
         
         //String urlParameters = "email=" + user + "&password=" + pass;
-        String urlParameters = "myhutemail=" + user + "&myhutpassword=" + pass;
+        String urlParameters = "myhut-login-email=" + user + "&myhut-login-password=" + pass;
         
         URL obj = new URL(url);
         String host = obj.getHost();
@@ -215,11 +209,10 @@ public class FitnessHutBooking {
             // Indisponivel e/ou esgotada
 
             String data = response.toString();
-            //boolean isClassSoldOut = data.contains("Esgotado");
-            boolean isClassSoldOut = data.contains("esgotado");
+
+            boolean isClassSoldOut = data.contains("Esgotada");
             
-            //boolean isClassAvailable = data.contains("Disponível");
-            boolean isClassAvailable = data.contains("disponivel");
+            boolean isClassAvailable = data.contains("disponível");
             
             boolean isClassBookable = data.contains("bookAula");
 
@@ -284,54 +277,25 @@ public class FitnessHutBooking {
             Document doc = Jsoup.parse(response.toString(),"UTF-8");
             
             //Element classList = doc.getElementById("aulas-list");
-            Elements links = doc.getElementsByClass("aulas-content-menu-aula");
-            
-            for (Element link : links) {
-                String classId = link.attr("onclick");
-                String classInfo = classId.substring( classId.indexOf("\"") + 1 , classId.lastIndexOf("\""));
-                classId = classId.substring( classId.indexOf("(") + 1 , classId.lastIndexOf(","));
-                 
-                Element e = link.child(0);
-
-                String classTimeDuration = e.childNode(0).toString();
-                String classTime = classTimeDuration.substring( 0 , classTimeDuration.indexOf("/") - 1 );
-                String classDuration = classTimeDuration.substring( classTimeDuration.indexOf("/") + 2 );
-                String classLocation = e.childNode(2).toString();
-
-                DateFormat datef = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-                Date dia = datef.parse( df.format(day) + " " + classTime );
-                
-                Vector row = new Vector();
-                row.add(classId);
-                //row.add(classSchedule);
-                row.add(dia);
-                row.add(classInfo);
-                row.add(classDuration);
-                row.add(classLocation);
-                row.add(new Boolean(false));
-                data.add(row);
-
-            }       
-            
- 
-            /*
-            
-            Elements links = doc.getElementsByTag("li");
+            Elements links = doc.getElementsByClass("panel-title");
             
             for (Element link : links) {
                 Element e = link.child(0);
                 String classId = e.attr("onclick");
+
                 classId = classId.substring( classId.indexOf("(") + 1 , classId.lastIndexOf(")"));
-                String classTime = e.child(0).child(0).text();
-                String classInfo = e.child(1).child(0).text();
-                String classDurationLocation = e.child(1).child(1).text();
-                String classDuration = classDurationLocation.substring( 0 , classDurationLocation.indexOf(",") );
-                String classLocation = classDurationLocation.substring( classDurationLocation.indexOf(",") + 1 );
-
-
+                
+                Node eTime = e.childNode(0).childNode(0).childNode(0);
+                String classTime = eTime.toString();
+                Node eName = e.childNode(1).childNode(0).childNode(0);
+                String classInfo = eName.toString();
+                TextNode eLocation = (TextNode) e.childNode(2).childNode(0);
+                String classLocation = eLocation.text();
+                Node eDuration = e.childNode(3).childNode(0);
+                String classDuration = eDuration.toString();
+                
                 DateFormat datef = new SimpleDateFormat("yyyy-MM-dd HH:mm");
                 Date dia = datef.parse( df.format(day) + " " + classTime );
-                 
                 
                 Vector row = new Vector();
                 row.add(classId);
@@ -342,9 +306,10 @@ public class FitnessHutBooking {
                 row.add(classLocation);
                 row.add(new Boolean(false));
                 data.add(row);
+                
 
-            }
-            */
+            }       
+            
             return true;
     }
 

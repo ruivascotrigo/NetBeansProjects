@@ -40,7 +40,11 @@ public class FitnessHutBooking {
     
     private static final String loginURL = "https://www.myhut.pt/myhut/functions/login.php"; //POST
     
-    private static final String bookClassURL = "https://www.myhut.pt/myhut/functions/myhut.php"; //POST
+    //private static final String bookClassURL = "https://www.myhut.pt/myhut/functions/myhut.php"; //POST
+    //Below for new mobile app
+    // https://www.myhut.pt/webservices/myhut/aulas-marcacao-json.php?id=52087&aid=187137
+    private static final String bookClassURL = "https://www.myhut.pt/webservices/myhut/aulas-marcacao-json.php?id="; //GET
+    
     
     private static final String getClassAvailabilityURL = "https://www.myhut.pt/myhut/functions/get-aula.php?id="; //GET
     
@@ -174,70 +178,68 @@ public class FitnessHutBooking {
         return loginResult;
     }
     
-    public static String getClassAvailabilityHUT(String phpCookie, String classId) throws Exception{
+    public static String getClassAvailabilityHUT(String phpCookie, String classId) throws Exception {
 
-        String userId = "Unavailable" ;
+        String userId = "Unavailable";
         //return this.sendGet(getClassURL + classId);
         String url = getClassAvailabilityURL + classId;
 
         URL obj = new URL(url);
         HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 
-            // optional default is GET
-            con.setRequestMethod("GET");
+        // optional default is GET
+        con.setRequestMethod("GET");
 
-            //add request header
-            con.setRequestProperty("User-Agent", USER_AGENT);
-            con.setRequestProperty("Cookie", phpCookie);
+        //add request header
+        con.setRequestProperty("User-Agent", USER_AGENT);
+        con.setRequestProperty("Cookie", phpCookie);
 
-            int responseCode = con.getResponseCode();
-            System.out.println("\nSending 'GET' request to URL : " + url);
-            System.out.println("Response Code : " + responseCode);
+        int responseCode = con.getResponseCode();
+        System.out.println("\nSending 'GET' request to URL : " + url);
+        System.out.println("Response Code : " + responseCode);
 
-            BufferedReader in = new BufferedReader( new InputStreamReader(con.getInputStream()) );
-            String inputLine;
-            StringBuffer response = new StringBuffer();
+        BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+        String inputLine;
+        StringBuffer response = new StringBuffer();
 
-            while ((inputLine = in.readLine()) != null) {
-                    response.append(inputLine);
-            }
-            in.close();
+        while ((inputLine = in.readLine()) != null) {
+            response.append(inputLine);
+        }
+        in.close();
 
-            //Aula pode estar em 3 estados
-            // Disponivel - mas ainda nao é possivel reservar
-            // Disponivel - possivel reservar
-            // Indisponivel e/ou esgotada
+        //Aula pode estar em 3 estados
+        // Disponivel - mas ainda nao é possivel reservar
+        // Disponivel - possivel reservar
+        // Indisponivel e/ou esgotada
+        String data = response.toString();
 
-            String data = response.toString();
+        boolean isClassSoldOut = data.contains("Esgotada");
 
-            boolean isClassSoldOut = data.contains("Esgotada");
-            
-            boolean isClassAvailable = data.contains("disponível");
-            
-            boolean isClassBookable = data.contains("bookAula");
+        boolean isClassAvailable = data.contains("disponível");
 
-            System.out.println("isClassSoldOut: " + isClassSoldOut);
-            System.out.println("isClassAvailable: " + isClassAvailable);
-            System.out.println("isClassBookable: " + isClassBookable);
-            System.out.println(userId);
-            
-            //System.out.println(response.toString());
-            
-            /*
+        boolean isClassBookable = data.contains("bookAula");
+
+        System.out.println("isClassSoldOut: " + isClassSoldOut);
+        System.out.println("isClassAvailable: " + isClassAvailable);
+        System.out.println("isClassBookable: " + isClassBookable);
+        System.out.println(userId);
+
+        //System.out.println(response.toString());
+        /*
             JOptionPane.showMessageDialog(null, "Class: " + classId + " is:\n\r" + 
                                                 "Available: " + isClassAvailable +
                                                 "\n\rSold Out: " + isClassSoldOut +
                                                 "\n\rBookablee: " + isClassBookable);
-            */
-            if (isClassAvailable & isClassBookable){
-                Document doc = Jsoup.parse(response.toString());
-                Element e = doc.getElementById("b-book" + classId);
-                userId = e.attr("onclick");
-                userId = userId.substring( userId.indexOf(",") + 1 , userId.lastIndexOf(")"));
-            }
-            
-            return userId;
-            
+         */
+        if (isClassAvailable & isClassBookable) {
+            Document doc = Jsoup.parse(response.toString());
+            Element e = doc.getElementById("b-book" + classId);
+            userId = e.attr("onclick");
+            userId = userId.substring(userId.indexOf(",") + 1, userId.lastIndexOf(")"));
+        }
+
+        return userId;
+
     }
 
     public boolean getClassesHUT(String phpCookie, String fitnessHutLocationId, Date day, Vector<Vector> data) throws Exception{
@@ -317,13 +319,37 @@ public class FitnessHutBooking {
    
         
         DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-        String url = bookClassURL ;
-        //String urlParameters = "data=" + df.format(classDate) + "&aula=" + classId + "&socio=" + userId + "&op=book-aula" ;
-        String urlParameters = "aula=" + classId + "&socio=" + userId + "&op=book-aulas" ;        
-                
+        String url = bookClassURL + userId + "&aid=" + classId ;
+        
         URL obj = new URL(url);
         HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+        
+        con.setRequestMethod("GET");
+        con.setRequestProperty("User-Agent", USER_AGENT);
 
+        int responseCode = con.getResponseCode();
+        System.out.println("\nSending 'GET' request to URL : " + url);
+        System.out.println("Response Code : " + responseCode);
+
+        BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+        String inputLine;
+        StringBuffer response = new StringBuffer();
+
+        while ((inputLine = in.readLine()) != null) {
+            response.append(inputLine);
+        }
+        in.close();
+
+    
+        if ( response.toString().contains("Aula reservada") ) {
+                    System.out.println("Aula marcada com sucesso, código: ->" + response.toString() + "<-");
+                    return true;
+        }
+        System.out.println("Nao foi possivel marcar a aula, codigo de erro: ->" + response.toString() + "<-");
+        return false;
+       
+        
+/*
         //add reuqest header
         con.setRequestMethod("POST");
         con.setRequestProperty("User-Agent", USER_AGENT);
@@ -364,7 +390,7 @@ public class FitnessHutBooking {
         }
         System.out.println("Nao foi possivel marcar a aula, codigo de erro: ->" + response.toString() + "<-");
         return false;
-        
+*/      
         
      /*   
         resultados

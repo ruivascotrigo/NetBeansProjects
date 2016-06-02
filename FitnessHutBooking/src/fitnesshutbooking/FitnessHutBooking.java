@@ -43,7 +43,8 @@ public class FitnessHutBooking {
     //private static final String bookClassURL = "https://www.myhut.pt/myhut/functions/myhut.php"; //POST
     //Below for new mobile app
     // https://www.myhut.pt/webservices/myhut/aulas-marcacao-json.php?id=52087&aid=187137
-    private static final String bookClassURL = "https://www.myhut.pt/webservices/myhut/aulas-marcacao-json.php?id="; //GET
+    // private static final String bookClassURL = "https://www.myhut.pt/webservices/myhut/aulas-marcacao-json.php?id="; //GET
+    private static final String bookClassURL = "https://www.myhut.pt/appservices/app2016maymyv1hut/aulas-marcacao-json.php"; //POST
     
     
     private static final String getClassAvailabilityURL = "https://www.myhut.pt/myhut/functions/get-aula.php?id="; //GET
@@ -105,6 +106,7 @@ public class FitnessHutBooking {
     
     //private String phpCookie = "";
     private String userId = "";
+    private static final String bookingPassword = "e94b10f0da8d42095ca5c20927416de5";
     
     
     public static String loginHUT(String user, String pass) throws Exception{
@@ -130,7 +132,7 @@ public class FitnessHutBooking {
         //JOptionPane.showMessageDialog(null, "The dns name " + host + " was resolved to the IP address " + ip );
         HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 
-        //add reuqest header
+        //add request header
         con.setRequestMethod("POST");
         con.setRequestProperty("User-Agent", USER_AGENT);
         con.setRequestProperty("Accept-Language", "en-US,en;q=0.5");
@@ -153,8 +155,7 @@ public class FitnessHutBooking {
             //System.out.println("Content-Type: " + con.getContentType());
         }
 
-        BufferedReader in = new BufferedReader(
-                new InputStreamReader(con.getInputStream()));
+        BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
         String inputLine;
         StringBuffer response = new StringBuffer();
 
@@ -171,14 +172,13 @@ public class FitnessHutBooking {
             System.out.println("Auth OK");
             loginResult = con.getHeaderField("Set-Cookie");
         }
-        //print result
-        //System.out.println(response.toString());
+
         System.out.println(loginResult);
 
         return loginResult;
     }
     
-    public static String getClassAvailabilityHUT(String phpCookie, String classId) throws Exception {
+    public static String getClassAvailabilityHUT(/*String phpCookie, */String classId) throws Exception {
 
         String userId = "Unavailable";
         //return this.sendGet(getClassURL + classId);
@@ -192,7 +192,7 @@ public class FitnessHutBooking {
 
         //add request header
         con.setRequestProperty("User-Agent", USER_AGENT);
-        con.setRequestProperty("Cookie", phpCookie);
+        //con.setRequestProperty("Cookie", phpCookie);
 
         int responseCode = con.getResponseCode();
         System.out.println("\nSending 'GET' request to URL : " + url);
@@ -222,24 +222,14 @@ public class FitnessHutBooking {
         System.out.println("isClassSoldOut: " + isClassSoldOut);
         System.out.println("isClassAvailable: " + isClassAvailable);
         System.out.println("isClassBookable: " + isClassBookable);
-        System.out.println(userId);
 
-        //System.out.println(response.toString());
-        /*
-            JOptionPane.showMessageDialog(null, "Class: " + classId + " is:\n\r" + 
-                                                "Available: " + isClassAvailable +
-                                                "\n\rSold Out: " + isClassSoldOut +
-                                                "\n\rBookablee: " + isClassBookable);
-         */
         if (isClassAvailable & isClassBookable) {
-            Document doc = Jsoup.parse(response.toString());
-            Element e = doc.getElementById("b-book" + classId);
-            userId = e.attr("onclick");
-            userId = userId.substring(userId.indexOf(",") + 1, userId.lastIndexOf(")"));
+            userId = "52087";
         }
 
+        System.out.println(userId);
         return userId;
-
+        
     }
 
     public boolean getClassesHUT(String phpCookie, String fitnessHutLocationId, Date day, Vector<Vector> data) throws Exception{
@@ -317,8 +307,9 @@ public class FitnessHutBooking {
 
     public static boolean bookClassHUT(String phpCookie, String classId, String userId, Date classDate) throws Exception{
    
+/*
+        MARCACAO COM USO DE GET
         
-        DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
         String url = bookClassURL + userId + "&aid=" + classId ;
         
         URL obj = new URL(url);
@@ -331,6 +322,9 @@ public class FitnessHutBooking {
         System.out.println("\nSending 'GET' request to URL : " + url);
         System.out.println("Response Code : " + responseCode);
 
+        
+        
+        
         BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
         String inputLine;
         StringBuffer response = new StringBuffer();
@@ -340,22 +334,30 @@ public class FitnessHutBooking {
         }
         in.close();
 
-    
         if ( response.toString().contains("Aula reservada") ) {
-                    System.out.println("Aula marcada com sucesso, código: ->" + response.toString() + "<-");
-                    return true;
+            System.out.println("Aula marcada com sucesso, código: ->" + response.toString() + "<-");
+            return true;
         }
         System.out.println("Nao foi possivel marcar a aula, codigo de erro: ->" + response.toString() + "<-");
         return false;
-       
+*/     
         
-/*
-        //add reuqest header
+
+        //MARCACAO COM USO DE POST
+        
+        String url = bookClassURL;
+        
+        String urlParameters = "id=" + userId + "&aid=" + classId + "&password=" + bookingPassword ;
+        
+        URL obj = new URL(url);
+        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+        
+        //add request header
         con.setRequestMethod("POST");
         con.setRequestProperty("User-Agent", USER_AGENT);
         con.setRequestProperty("Accept-Language", "en-US,en;q=0.5");
         con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-        con.setRequestProperty("Cookie", phpCookie);
+        //con.setRequestProperty("Cookie", phpCookie);
 
         // Send post request
         con.setDoOutput(true);
@@ -374,8 +376,7 @@ public class FitnessHutBooking {
             System.out.println("Content-Type: " + con.getContentType());
         }
 
-        BufferedReader in = new BufferedReader(
-                new InputStreamReader(con.getInputStream()));
+        BufferedReader in = new BufferedReader( new InputStreamReader(con.getInputStream()) );
         String inputLine;
         StringBuffer response = new StringBuffer();
 
@@ -384,13 +385,13 @@ public class FitnessHutBooking {
         }
         in.close();
       
-        if ( "  1".equals(response.toString()) ) {
-                    System.out.println("Aula marcada com sucesso, código: ->" + response.toString() + "<-");
-                    return true;
+        if ( response.toString().contains("Aula reservada") ) {
+            System.out.println("Aula marcada com sucesso, código: ->" + response.toString() + "<-");
+            return true;
         }
         System.out.println("Nao foi possivel marcar a aula, codigo de erro: ->" + response.toString() + "<-");
         return false;
-*/      
+    
         
      /*   
         resultados
@@ -440,102 +441,78 @@ function bookAula(aula, socio) {
      
     public static void bookClassThreadHut(String user, String pass, String classId, Date classDate) throws Exception {
         System.out.println("Starting a new booking thread");
-        
+
         // 1 - waits until time to book class
         // 2 - starts checking for class availability
         // 3 - Book class when available to be booked.
-                
         // getClassAvailabilityHUT(String classId); // obtain userId from this function
         // bookClassHUT(String classId, String userId, Date classDate);
-        
         Date currentDate = new Date();
         long timeSleep = 0;
         long timeDiff = 0;
         String phpCookie = "";
         String userId = "";
-        
-        timeDiff = ( classDate.getTime() - currentDate.getTime() ) / 1000;
-        
-        Date tempDate = new Date(timeDiff*1000);
-        
-        if ( timeDiff < 0 ){
+
+        timeDiff = (classDate.getTime() - currentDate.getTime()) / 1000;
+
+        Date tempDate = new Date(timeDiff * 1000);
+
+        if (timeDiff < 0) {
             System.out.println("This class already started and cannot be booked");
-            JOptionPane.showMessageDialog(null, "The class: " + classId + " already started and cannot be booked" );
+            JOptionPane.showMessageDialog(null, "The class: " + classId + " already started and cannot be booked");
             return;
-        }
-        else if( timeDiff < bookClassPeriod){
+        } else if (timeDiff < bookClassPeriod) {
             System.out.println("Less than 10 hours until class, trying to book immediatly");
             //JOptionPane.showMessageDialog(null, "The class: " + classId + " is in less than 10 hours , trying to book immediatly" );
-        }
-        else if( timeDiff < maxWaitTime ){
-            timeSleep = (timeDiff - bookClassPeriod - beforeWaitTime) ;
+        } else if (timeDiff < maxWaitTime) {
+            timeSleep = (timeDiff - bookClassPeriod - beforeWaitTime);
             System.out.println("More that 10 hours before class, going to sleep for " + timeSleep + " seconds");
             JOptionPane.showMessageDialog(null, "The class: " + classId + " is in more than 10 hours, going to sleep for " + timeSleep + " seconds");
-            
-            if ( timeDiff > beforeWaitTime){
+
+            if (timeDiff > beforeWaitTime) {
                 try {
-                    Thread.sleep( timeSleep * 1000);
-                } catch(InterruptedException ex) {
+                    Thread.sleep(timeSleep * 1000);
+                } catch (InterruptedException ex) {
                     Thread.currentThread().interrupt();
                     System.out.println("Returning1...");
                     return;
                 }
             }
-        }
-        else{
+        } else {
             System.out.println("Not possible to book, more that 7 days until class");
             JOptionPane.showMessageDialog(null, "The class: " + classId + " is more that 7 days ahead, not possible to book,");
             return;
         }
-            
-         
 
-        try {
-            phpCookie = loginHUT(user, pass);
-
-            if (phpCookie != "AuthFailed"){
-                
-                do{    
-                    
-                    try {
-                        Thread.sleep(5000);
-                    } catch(InterruptedException ex) {
-                        Thread.currentThread().interrupt();
-                        System.out.println("Returning2...");
-                        return;
-                    }
-                    
-                    try{
-                        userId = getClassAvailabilityHUT(phpCookie, classId);
-                    } catch (Exception ex) {
-                        // Catch connection exception and continue program execution
-                        System.out.println(ex.getMessage());
-                        System.out.println("Connection issue to FitnessHut server, continuing program execution in 5 seconds");
-                    }
-                    currentDate = new Date();
-                    timeDiff = ( classDate.getTime() - currentDate.getTime() ) / 1000;
-                    
-                }
-                while (userId == "Unavailable" && timeDiff > 0);
-                
-                if( userId != "Unavailable" ){
-                    if ( bookClassHUT(phpCookie, classId, userId, classDate) ){
-                        JOptionPane.showMessageDialog(null, "Class: " + classId + " has been booked successfully!" );
-                    }
-                    else{
-                        JOptionPane.showMessageDialog(null, "Class: " + classId + " could not be booked!" );
-                    }
-                }
-                
-            }
-            else{
-                JOptionPane.showMessageDialog(null, "Authentication failed during the class booking process!" );
+        do {
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                System.out.println("Returning2...");
+                return;
             }
 
+            try {
+                userId = getClassAvailabilityHUT(/*phpCookie,*/ classId);
+            } catch (Exception ex) {
+                // Catch connection exception and continue program execution
+                System.out.println(ex.getMessage());
+                System.out.println("Connection issue to FitnessHut server, continuing program execution in 5 seconds");
+            }
+            currentDate = new Date();
+            timeDiff = (classDate.getTime() - currentDate.getTime()) / 1000;
 
-        } catch (Exception ex) {
-            Logger.getLogger(FitnessHutBookingGUI.class.getName()).log(Level.SEVERE, null, ex);
+        } while (userId == "Unavailable" && timeDiff > 0);
+
+        if (userId != "Unavailable") {
+            if (bookClassHUT(phpCookie, classId, userId, classDate)) {
+                JOptionPane.showMessageDialog(null, "Class: " + classId + " has been booked successfully!");
+            } else {
+                JOptionPane.showMessageDialog(null, "Class: " + classId + " could not be booked!");
+            }
         }
+
         System.out.println("Ending a booking thread");
     }
     
